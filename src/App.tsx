@@ -52,7 +52,7 @@ const darkTheme = {
 function App() {
   const [options, setOptions] = useState<QROptions>(defaultOptions);
   const [labels, setLabels] = useState<QRLabels>(defaultLabels);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   const theme = isDark ? darkTheme : lightTheme;
 
@@ -67,7 +67,7 @@ function App() {
   return (
     <div className={`min-h-screen transition-colors ${theme.page}`}>
       <header className={`${theme.header} shadow-sm px-6 py-4 flex items-center justify-between`}>
-        <h1 className={`text-xl font-bold ${theme.titleText}`}>🔲 QRGo</h1>
+        <h1 className={`text-xl font-bold ${theme.titleText}`}>QRGo - by Rj</h1>
         <button
           onClick={() => setIsDark(!isDark)}
           className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${theme.toggleBtn}`}
