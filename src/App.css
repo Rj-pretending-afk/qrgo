@@ -1,1 +1,10 @@
-/* Tailwind handles all styles */
+body {
+  font-family: 'Inter', 'Noto Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Scale 2x QR canvas down for crisp rendering on retina displays */
+.qr-canvas-wrap canvas {
+  width: 280px !important;
+  height: 280px !important;
+  display: block;
+}

@@ -7,21 +7,29 @@ interface Props {
   isDark: boolean;
 }
 
-const TEMPLATES: { name: string; color: string; options: Partial<QROptions> }[] = [
+const TEMPLATES: {
+  name: string;
+  foregroundColor: string;
+  backgroundColor: string;
+  options: Partial<QROptions>;
+}[] = [
   {
-    name: '极简',
-    color: '#000000',
+    name: '极简黑',
+    foregroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
     options: { foregroundColor: '#000000', backgroundColor: '#FFFFFF', dotStyle: 'square', cornerStyle: 'square' },
   },
   {
     name: '复古蓝',
-    color: '#1A3A5C',
+    foregroundColor: '#1A3A5C',
+    backgroundColor: '#F0EBE3',
     options: { foregroundColor: '#1A3A5C', backgroundColor: '#F0EBE3', dotStyle: 'rounded', cornerStyle: 'extra-rounded' },
   },
   {
-    name: '霓虹',
-    color: '#E63946',
-    options: { foregroundColor: '#E63946', backgroundColor: '#1A1A2E', dotStyle: 'dots', cornerStyle: 'dot' },
+    name: '赛博粉',
+    foregroundColor: '#e761aa',
+    backgroundColor: '#111122',
+    options: { foregroundColor: '#e761aa', backgroundColor: '#111122', dotStyle: 'dots', cornerStyle: 'dot' },
   },
 ];
 
@@ -73,18 +81,26 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 预设模板 */}
       <div>
-        <label className={`block text-sm font-medium mb-2 ${label}`}>预设模板</label>
+        <label className={`block text-base font-medium mb-2 ${label}`}>预设模板</label>
         <div className="flex gap-2">
           {TEMPLATES.map((t) => (
             <button
               key={t.name}
               onClick={() => onChange(t.options)}
-              className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
+              className={`flex-1 overflow-hidden rounded-lg border text-xs font-medium transition-colors flex items-stretch ${
                 isDark ? 'border-gray-600 text-gray-300 hover:border-gray-400' : 'border-gray-200 text-gray-600 hover:border-gray-400'
               }`}
-              style={{ borderLeftWidth: '3px', borderLeftColor: t.color }}
             >
-              {t.name}
+              <span
+                className="w-[30px] shrink-0"
+                style={{ backgroundColor: t.foregroundColor }}
+              />
+              <span
+                className="flex flex-1 items-center justify-end py-2 pl-2 pr-3 text-right"
+                style={{ backgroundColor: t.backgroundColor, color: t.foregroundColor }}
+              >
+                {t.name}
+              </span>
             </button>
           ))}
         </div>
@@ -93,7 +109,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
       {/* 内容输入 */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={`block text-sm font-medium ${label}`}>内容（文字 / 链接）</label>
+          <label className={`block text-base font-medium ${label}`}>内容（文字 / 链接）</label>
           <span className={`text-xs font-mono ${options.data.length > 2500 ? 'text-red-500' : options.data.length > 2000 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText}`}>
             {options.data.length} / 2500
           </span>
@@ -112,7 +128,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 颜色 */}
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${label}`}>颜色</label>
+        <label className={`block text-base font-medium mb-1.5 ${label}`}>颜色</label>
         <div className="flex gap-4">
           <div className="flex-1">
             <p className={`text-xs mb-1 ${subLabel}`}>前景色</p>
@@ -137,7 +153,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 点阵样式 */}
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${label}`}>点阵样式</label>
+        <label className={`block text-base font-medium mb-1.5 ${label}`}>点阵样式</label>
         <div className="flex gap-2">
           {DOT_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ dotStyle: s.value })}
@@ -150,7 +166,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 定位符样式 */}
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${label}`}>定位符样式</label>
+        <label className={`block text-base font-medium mb-1.5 ${label}`}>定位符样式</label>
         <div className="flex gap-2">
           {CORNER_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ cornerStyle: s.value })}
@@ -163,10 +179,10 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* Logo 上传 */}
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${label}`}>中心 Logo</label>
+        <label className={`block text-base font-medium mb-1.5 ${label}`}>中心 Logo</label>
         {options.logoUrl ? (
           <div className="flex items-center gap-3">
-            <img src={options.logoUrl} className="w-10 h-10 rounded object-contain border border-gray-200" />
+            <img src={options.logoUrl} className={`w-14 h-14 rounded-lg object-contain border ${isDark ? 'border-gray-600 bg-white/10' : 'border-gray-200 bg-gray-50'}`} />
             <div className="flex-1">
               <input type="range" min="0.2" max="0.4" step="0.05"
                 value={options.logoSize}
@@ -197,7 +213,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 纠错等级 */}
       <div>
-        <label className={`block text-sm font-medium mb-1.5 ${label}`}>纠错等级</label>
+        <label className={`block text-base font-medium mb-1.5 ${label}`}>纠错等级</label>
         <select value={options.errorCorrectionLevel}
           onChange={(e) => onChange({ errorCorrectionLevel: e.target.value as ErrorCorrectionLevel })}
           className={`w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${inputCls}`}>

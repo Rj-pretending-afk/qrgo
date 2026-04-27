@@ -19,8 +19,8 @@ const defaultOptions: QROptions = {
 const defaultLabel: LabelConfig = {
   enabled: false,
   text: '',
-  fontSize: 14,
-  fontFamily: 'sans-serif',
+  fontSize: 18,
+  fontFamily:  "'Inter', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif",
   color: '#333333',
 };
 
@@ -32,12 +32,12 @@ const defaultLabels: QRLabels = {
 };
 
 const lightTheme = {
-  page: 'bg-[#F8F7F4]',
-  header: 'bg-white',
-  card: 'bg-white',
+  page: 'bg-[#E8E8E8]',
+  header: 'bg-[#F0F0F0]',
+  card: 'bg-[#F5F5F5]',
   titleText: 'text-[#1A1A2E]',
-  toggleBtn: 'border-gray-200 text-gray-600 hover:bg-gray-50',
-  sectionTitle: 'text-gray-400 border-gray-100',
+  toggleBtn: 'border-gray-300 text-gray-600 hover:bg-gray-200',
+  sectionTitle: 'text-gray-500 border-gray-200',
 };
 
 const darkTheme = {
@@ -46,7 +46,7 @@ const darkTheme = {
   card: 'bg-[#1E1E2E]',
   titleText: 'text-white',
   toggleBtn: 'border-gray-600 text-gray-300 hover:bg-gray-700',
-  sectionTitle: 'text-gray-500 border-gray-700',
+  sectionTitle: 'text-gray-400 border-gray-700',
 };
 
 function App() {

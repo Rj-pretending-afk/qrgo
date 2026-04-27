@@ -15,12 +15,12 @@ const POSITIONS: { value: LabelPosition; label: string }[] = [
 ];
 
 const FONTS = [
-  { value: 'sans-serif', label: '无衬线' },
-  { value: 'serif', label: '衬线' },
-  { value: 'monospace', label: '等宽' },
-  { value: "'Microsoft YaHei', sans-serif", label: '微软雅黑' },
+  { value: "'Inter', 'Noto Sans SC', system-ui, sans-serif", label: 'Inter（默认）' },
+  { value: "'Noto Sans SC', sans-serif", label: 'Noto Sans SC' },
+  { value: 'serif', label: '衬线体' },
+  { value: 'monospace', label: '等宽体' },
+  { value: "'Microsoft YaHei', 'PingFang SC', sans-serif", label: '微软雅黑' },
   { value: "'SimSun', serif", label: '宋体' },
-  { value: "'SimHei', sans-serif", label: '黑体' },
 ];
 
 export function LabelPanel({ labels, onChange, isDark }: Props) {

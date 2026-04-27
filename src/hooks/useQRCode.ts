@@ -3,6 +3,8 @@ import QRCodeStyling from 'qr-code-styling';
 import type { QROptions } from '../types/qr.types';
 
 const MAX_DATA_LENGTH = 2500;
+// Render at 2x for crisp display on retina screens; CSS scales it to 280px
+const QR_PIXEL_SIZE = 560;
 
 export function useQRCode(options: QROptions) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,8 +14,8 @@ export function useQRCode(options: QROptions) {
 
   if (qrCode.current === null) {
     qrCode.current = new QRCodeStyling({
-      width: 280,
-      height: 280,
+      width: QR_PIXEL_SIZE,
+      height: QR_PIXEL_SIZE,
       data: 'https://example.com',
       dotsOptions: { color: '#1d1d31', type: 'square' },
       backgroundOptions: { color: '#ffffff' },
@@ -47,7 +49,7 @@ export function useQRCode(options: QROptions) {
       backgroundOptions: { color: options.backgroundColor },
       cornersSquareOptions: { type: options.cornerStyle },
       image: options.logoUrl || undefined,
-      imageOptions: { crossOrigin: 'anonymous', margin: 4, imageSize: options.logoSize },
+      imageOptions: { margin: 4, imageSize: options.logoSize },
       qrOptions: { errorCorrectionLevel: options.errorCorrectionLevel },
     });
 
