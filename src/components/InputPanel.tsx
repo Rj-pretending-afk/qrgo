@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle } from '../types/qr.types';
 
 interface Props {
@@ -62,12 +62,17 @@ export function InputPanel({ options, onChange, isDark }: Props) {
     ? 'bg-transparent text-gray-400 border-gray-600 hover:border-gray-400 hover:shadow-sm'
     : 'bg-transparent text-gray-500 border-gray-300 hover:border-gray-400 hover:shadow-sm';
 
-  // Detect active template by comparing key color/style fields
-  const activeTemplateIdx = TEMPLATES.findIndex(t =>
-    t.options.foregroundColor === options.foregroundColor &&
-    t.options.backgroundColor === options.backgroundColor &&
-    t.options.dotStyle        === options.dotStyle &&
-    t.options.cornerStyle     === options.cornerStyle
+  const byteLen = new TextEncoder().encode(options.data).length;
+  const byteWarn = byteLen > 1800 ? 'text-red-500' : byteLen > 1400 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText;
+
+  const activeTemplateIdx = useMemo(() =>
+    TEMPLATES.findIndex(t =>
+      t.options.foregroundColor === options.foregroundColor &&
+      t.options.backgroundColor === options.backgroundColor &&
+      t.options.dotStyle        === options.dotStyle &&
+      t.options.cornerStyle     === options.cornerStyle
+    ),
+    [options.foregroundColor, options.backgroundColor, options.dotStyle, options.cornerStyle]
   );
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,22 +128,14 @@ export function InputPanel({ options, onChange, isDark }: Props) {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className={`block text-base font-semibold ${label}`}>内容（文字 / 链接）</label>
-          {(() => {
-            const bytes = new TextEncoder().encode(options.data).length;
-            const warn = bytes > 1800 ? 'text-red-500' : bytes > 1400 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText;
-            return (
-              <span className={`text-xs font-mono ${warn}`}>
-                {bytes} / 1800 字节
-              </span>
-            );
-          })()}
+          <span className={`text-xs font-mono ${byteWarn}`}>{byteLen} / 1800 字节</span>
         </div>
         <textarea
           value={options.data}
           onChange={(e) => onChange({ data: e.target.value })}
           placeholder="输入文字或粘贴链接..."
           className={`w-full border rounded-lg p-3 text-sm resize-none h-20 focus:outline-none focus:ring-2 transition-colors ${
-            new TextEncoder().encode(options.data).length > 1800
+            byteLen > 1800
               ? isDark ? 'border-red-700 focus:ring-red-700' : 'border-red-400 focus:ring-red-400'
               : inputCls
           }`}

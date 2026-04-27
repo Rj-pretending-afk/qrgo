@@ -79,7 +79,7 @@ function App() {
         </button>
       </header>
 
-      <main style={{ display: 'flex', flexDirection: 'row', gap: '24px', padding: '24px', maxWidth: '1080px', margin: '0 auto' }}>
+      <main className="flex flex-row gap-6 p-6 max-w-[1080px] mx-auto">
         {/* 左侧控制面板（可滚动） */}
         <div
           className={`rounded-xl shadow-sm p-5 ${theme.card}`}

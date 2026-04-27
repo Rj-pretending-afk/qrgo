@@ -10,7 +10,6 @@ interface Props {
 
 const DISPLAY_SIZE = 280;
 
-// Label renderer — adds semi-transparent bg pill when QR not yet generated
 function LabelEl({
   cfg,
   vertical = false,
@@ -43,80 +42,71 @@ export function QRPreview({ options, labels, isDark }: Props) {
   const { containerRef, download, getCanvas, isGenerating, error } = useQRCode(options);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
-  const isEmpty   = !options.data.trim();
-  const show      = (cfg: LabelConfig) => cfg.enabled && !!cfg.text.trim();
-  const inFrame   = options.labelsInFrame;
+  const isEmpty = !options.data.trim();
+  const show    = (cfg: LabelConfig) => cfg.enabled && !!cfg.text.trim();
+  const inFrame = options.labelsInFrame;
 
-  // ── Canvas composition for PNG download / clipboard ──────────────────────
   const composeCanvas = (): HTMLCanvasElement | null => {
     const qrCanvas = getCanvas();
     if (!qrCanvas) return null;
 
-    const qrSize   = qrCanvas.width;           // 560 (2x)
-    const scale    = qrSize / DISPLAY_SIZE;    // 2
+    const qrSize   = qrCanvas.width;
+    const scale    = qrSize / DISPLAY_SIZE;
     const gap      = 8 * scale;
     const lineH    = 1.4;
     const framePad = options.framePadding * scale;
     const frameRad = options.frameRadius  * scale;
 
-    const vH = (cfg: LabelConfig) =>
-      !show(cfg) ? 0 : cfg.fontSize * scale * cfg.text.split('\n').length * lineH + gap;
-    const vW = (cfg: LabelConfig) =>
-      !show(cfg) ? 0 : cfg.fontSize * scale * lineH + gap;
+    // Pre-compute visibility once — avoids redundant show() calls in size/draw helpers
+    const topVis   = show(labels.top);
+    const botVis   = show(labels.bottom);
+    const leftVis  = show(labels.left);
+    const rightVis = show(labels.right);
+    const anyLabels = topVis || botVis || leftVis || rightVis;
 
-    const topH   = vH(labels.top);
-    const botH   = vH(labels.bottom);
-    const leftW  = vW(labels.left);
-    const rightW = vW(labels.right);
-    const anyLabels = topH > 0 || botH > 0 || leftW > 0 || rightW > 0;
+    const vH = (cfg: LabelConfig, vis: boolean) =>
+      vis ? cfg.fontSize * scale * cfg.text.split('\n').length * lineH + gap : 0;
+    const vW = (cfg: LabelConfig, vis: boolean) =>
+      vis ? cfg.fontSize * scale * lineH + gap : 0;
+
+    const topH   = vH(labels.top,    topVis);
+    const botH   = vH(labels.bottom, botVis);
+    const leftW  = vW(labels.left,   leftVis);
+    const rightW = vW(labels.right,  rightVis);
 
     if (framePad === 0 && frameRad === 0 && !anyLabels) return qrCanvas;
 
-    const roundedPath = (
-      ctx: CanvasRenderingContext2D,
-      x: number, y: number, w: number, h: number, r: number,
-    ) => {
-      const cr = Math.min(r, w / 2, h / 2);
+    const clip = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
       ctx.beginPath();
-      ctx.moveTo(x + cr, y);
-      ctx.lineTo(x + w - cr, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + cr);
-      ctx.lineTo(x + w, y + h - cr);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - cr, y + h);
-      ctx.lineTo(x + cr, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - cr);
-      ctx.lineTo(x, y + cr);
-      ctx.quadraticCurveTo(x, y, x + cr, y);
-      ctx.closePath();
+      ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
+      ctx.clip();
     };
 
-    const drawH = (ctx: CanvasRenderingContext2D, cfg: LabelConfig, cx: number, cy: number) => {
-      if (!show(cfg)) return;
-      ctx.save();
+    const applyTextStyle = (ctx: CanvasRenderingContext2D, cfg: LabelConfig) => {
       ctx.font = `${cfg.fontSize * scale}px ${cfg.fontFamily}`;
       ctx.fillStyle = cfg.color;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
       ctx.shadowColor = 'rgba(0,0,0,0.28)';
       ctx.shadowBlur  = 4 * scale;
       ctx.shadowOffsetY = 1 * scale;
+    };
+
+    const drawH = (ctx: CanvasRenderingContext2D, cfg: LabelConfig, cx: number, cy: number) => {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      applyTextStyle(ctx, cfg);
       cfg.text.split('\n').forEach((line, i) =>
         ctx.fillText(line, cx, cy + i * cfg.fontSize * scale * lineH));
       ctx.restore();
     };
 
     const drawV = (ctx: CanvasRenderingContext2D, cfg: LabelConfig, cx: number, cy: number) => {
-      if (!show(cfg)) return;
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(Math.PI / 2);
-      ctx.font = `${cfg.fontSize * scale}px ${cfg.fontFamily}`;
-      ctx.fillStyle = cfg.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0,0,0,0.28)';
-      ctx.shadowBlur  = 4 * scale;
-      ctx.shadowOffsetY = 1 * scale;
+      applyTextStyle(ctx, cfg);
       ctx.fillText(cfg.text.replace(/\n/g, '  '), 0, 0);
       ctx.restore();
     };
@@ -125,48 +115,37 @@ export function QRPreview({ options, labels, isDark }: Props) {
     const ctx    = canvas.getContext('2d')!;
 
     if (inFrame && anyLabels) {
-      // Labels INSIDE frame → rounded-rect canvas (transparent corners)
       const cw = framePad + leftW + qrSize + rightW + framePad;
       const ch = framePad + topH  + qrSize + botH  + framePad;
       canvas.width  = cw;
       canvas.height = ch;
       ctx.save();
-      roundedPath(ctx, 0, 0, cw, ch, frameRad);
-      ctx.clip();
+      clip(ctx, 0, 0, cw, ch, frameRad);
       ctx.fillStyle = options.backgroundColor;
       ctx.fillRect(0, 0, cw, ch);
       ctx.drawImage(qrCanvas, framePad + leftW, framePad + topH);
-      drawH(ctx, labels.top,    cw / 2,                                framePad);
-      drawH(ctx, labels.bottom, cw / 2,                                framePad + topH + qrSize + gap / 2);
-      drawV(ctx, labels.left,   framePad + leftW / 2,                  framePad + topH + qrSize / 2);
-      drawV(ctx, labels.right,  framePad + leftW + qrSize + rightW / 2, framePad + topH + qrSize / 2);
+      if (topVis)   drawH(ctx, labels.top,    cw / 2,                                framePad);
+      if (botVis)   drawH(ctx, labels.bottom, cw / 2,                                framePad + topH + qrSize + gap / 2);
+      if (leftVis)  drawV(ctx, labels.left,   framePad + leftW / 2,                  framePad + topH + qrSize / 2);
+      if (rightVis) drawV(ctx, labels.right,  framePad + leftW + qrSize + rightW / 2, framePad + topH + qrSize / 2);
       ctx.restore();
     } else {
-      // Labels OUTSIDE frame (or no labels):
-      // QR frame gets rounded clip → transparent corners; labels drawn on transparent outer area
       const qrFrameW = framePad * 2 + qrSize;
       const qrFrameH = framePad * 2 + qrSize;
       const cw = leftW + qrFrameW + rightW;
       const ch = topH  + qrFrameH + botH;
       canvas.width  = cw;
       canvas.height = ch;
-
-      // Clip QR frame area to rounded rect, fill + draw QR inside it
       ctx.save();
-      roundedPath(ctx, leftW, topH, qrFrameW, qrFrameH, frameRad);
-      ctx.clip();
+      clip(ctx, leftW, topH, qrFrameW, qrFrameH, frameRad);
       ctx.fillStyle = options.backgroundColor;
-      ctx.fillRect(0, 0, cw, ch); // fillRect is clipped to rounded path
+      ctx.fillRect(0, 0, cw, ch);
       ctx.drawImage(qrCanvas, leftW + framePad, topH + framePad);
       ctx.restore();
-
-      // Labels float on the transparent outer area
-      if (anyLabels) {
-        drawH(ctx, labels.top,    cw / 2,                           0);
-        drawH(ctx, labels.bottom, cw / 2,                           topH + qrFrameH + gap / 2);
-        drawV(ctx, labels.left,   leftW / 2,                        ch / 2);
-        drawV(ctx, labels.right,  leftW + qrFrameW + rightW / 2,    ch / 2);
-      }
+      if (topVis)   drawH(ctx, labels.top,    cw / 2,                        0);
+      if (botVis)   drawH(ctx, labels.bottom, cw / 2,                        topH + qrFrameH + gap / 2);
+      if (leftVis)  drawV(ctx, labels.left,   leftW / 2,                     ch / 2);
+      if (rightVis) drawV(ctx, labels.right,  leftW + qrFrameW + rightW / 2, ch / 2);
     }
 
     return canvas;
@@ -197,7 +176,6 @@ export function QRPreview({ options, labels, isDark }: Props) {
     }, 'image/png');
   };
 
-  // ── Card style (mirrors download frame) ──────────────────────────────────
   const cardStyle: React.CSSProperties = {
     position: 'relative',
     padding: options.framePadding,
@@ -209,7 +187,7 @@ export function QRPreview({ options, labels, isDark }: Props) {
     transition: 'padding 0.25s ease, border-radius 0.25s ease',
   };
 
-  // Semi-transparent overlay helper (loading spinner / empty state)
+  // Closes over options so it reacts to frame changes without extra props
   const Overlay = ({ children }: { children: React.ReactNode }) => (
     <div
       className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5"
@@ -221,19 +199,19 @@ export function QRPreview({ options, labels, isDark }: Props) {
 
   const labelProps = { isEmpty, isDark };
   const copyLabel  = copyState === 'copied' ? '已复制' : copyState === 'failed' ? '复制失败' : '复制';
+  let copyBtnCls: string;
+  if (copyState === 'copied')      copyBtnCls = isDark ? 'border-green-500 text-green-400' : 'border-green-500 text-green-600';
+  else if (copyState === 'failed') copyBtnCls = isDark ? 'border-red-500 text-red-400'    : 'border-red-400 text-red-500';
+  else                             copyBtnCls = isDark ? 'border-gray-500 text-gray-200 hover:bg-white/10' : 'border-gray-400 text-gray-700 hover:bg-gray-100';
 
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-2">
-
-        {/* Outside-frame top label */}
         {!inFrame && show(labels.top) && <LabelEl cfg={labels.top} {...labelProps} />}
 
         <div className="flex items-center gap-2">
-          {/* Outside-frame left label */}
           {!inFrame && show(labels.left) && <LabelEl cfg={labels.left} vertical {...labelProps} />}
 
-          {/* ── THE CARD ── containerRef div is always at the same tree position ── */}
           <div style={cardStyle}>
             {isGenerating && (
               <Overlay>
@@ -252,30 +230,24 @@ export function QRPreview({ options, labels, isDark }: Props) {
             )}
 
             {/*
-              Inner layout is FIXED — containerRef div never moves in the React tree.
-              Labels inside the frame appear/disappear around it conditionally.
+              containerRef div is always at this exact tree position so React never
+              unmounts/remounts it when labelsInFrame toggles — prevents the QR canvas
+              from being detached by qr-code-styling.
             */}
             <div className="flex flex-col items-center gap-1">
               {inFrame && show(labels.top) && <LabelEl cfg={labels.top} {...labelProps} />}
-
               <div className="flex items-center gap-2">
                 {inFrame && show(labels.left) && <LabelEl cfg={labels.left} vertical {...labelProps} />}
-
-                {/* ← This div is ALWAYS here, never conditionally rendered or moved */}
                 <div ref={containerRef} className="qr-canvas-wrap" />
-
                 {inFrame && show(labels.right) && <LabelEl cfg={labels.right} vertical {...labelProps} />}
               </div>
-
               {inFrame && show(labels.bottom) && <LabelEl cfg={labels.bottom} {...labelProps} />}
             </div>
           </div>
 
-          {/* Outside-frame right label */}
           {!inFrame && show(labels.right) && <LabelEl cfg={labels.right} vertical {...labelProps} />}
         </div>
 
-        {/* Outside-frame bottom label */}
         {!inFrame && show(labels.bottom) && <LabelEl cfg={labels.bottom} {...labelProps} />}
       </div>
 
@@ -304,11 +276,7 @@ export function QRPreview({ options, labels, isDark }: Props) {
         <button
           onClick={handleCopy}
           disabled={isEmpty || !!error || isGenerating}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors border disabled:opacity-40 ${
-            copyState === 'copied'  ? (isDark ? 'border-green-500 text-green-400' : 'border-green-500 text-green-600') :
-            copyState === 'failed'  ? (isDark ? 'border-red-500  text-red-400'   : 'border-red-400  text-red-500')   :
-            isDark ? 'border-gray-500 text-gray-200 hover:bg-white/10' : 'border-gray-400 text-gray-700 hover:bg-gray-100'
-          }`}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors border disabled:opacity-40 ${copyBtnCls}`}
         >
           {copyLabel}
         </button>
