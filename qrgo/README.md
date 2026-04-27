@@ -1,73 +1,101 @@
-# React + TypeScript + Vite
+# 🔲 QRGo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 免费、开源、无需注册的自定义二维码生成器。纯前端处理，数据不上传服务器。
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38BDF8?logo=tailwindcss)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## ✨ 功能特性
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 核心功能
+- 🖊 **实时预览** — 输入即生成，所见即所得
+- 🎨 **颜色自定义** — 前景色 + 背景色自由搭配
+- 📐 **点阵样式** — 方形 / 圆角 / 圆点三种风格
+- 🔲 **定位符样式** — 方角 / 圆角 / 圆点三种风格
+- 🖼 **中心 Logo** — 上传本地图片嵌入二维码中心
+- 🏷 **文字标签** — 在二维码上下左右添加自定义文字（支持字体、字号、颜色、换行）
+- 🎭 **预设模板** — 极简 / 复古蓝 / 霓虹 一键切换
+- 🌙 **深色模式** — 支持手动切换浅色 / 深色
 
-## Expanding the ESLint configuration
+### 下载选项
+- 下载为 **PNG**（含文字标签合成）
+- 下载为 **SVG**（矢量格式）
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 隐私优先
+- ✅ 纯前端处理，所有数据留在本地
+- ✅ 无账号系统，无需注册
+- ✅ 无广告，无追踪
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 本地运行
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**前置要求：** Node.js v18+
+
+```bash
+# 克隆仓库
+git clone https://github.com/你的用户名/qrgo.git
+cd qrgo
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+打开浏览器访问 `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**构建生产版本：**
+```bash
+npm run build
 ```
+
+---
+
+## 🛠 技术栈
+
+| 分类 | 技术 |
+|---|---|
+| 前端框架 | React 19 + TypeScript |
+| 构建工具 | Vite 8 |
+| 样式方案 | Tailwind CSS 3 |
+| 二维码库 | qr-code-styling 1.9 |
+| 部署 | GitHub Pages / Vercel |
+
+---
+
+## 📁 项目结构
+
+```
+src/
+├── components/
+│   ├── InputPanel.tsx      # 内容与样式控制面板
+│   ├── QRPreview.tsx       # 二维码预览与下载
+│   └── LabelPanel.tsx      # 文字标签配置
+├── hooks/
+│   └── useQRCode.ts        # 二维码生成逻辑
+├── types/
+│   └── qr.types.ts         # TypeScript 类型定义
+└── App.tsx                 # 主布局与状态管理
+```
+
+---
+
+## 🗺 开发路线图
+
+- [x] Phase 0 · 项目搭建
+- [x] Phase 1 · MVP（基础生成与下载）
+- [x] Phase 2 · 样式定制（点阵、Logo、模板、文字标签）
+- [ ] Phase 3 · 完善与发布（SEO、GitHub Actions 自动部署）
+
+---
+
+## 📄 License
+
+[MIT](./LICENSE) © 2026 QRGo
