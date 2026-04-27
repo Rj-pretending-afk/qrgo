@@ -123,16 +123,22 @@ export function InputPanel({ options, onChange, isDark }: Props) {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className={`block text-base font-semibold ${label}`}>内容（文字 / 链接）</label>
-          <span className={`text-xs font-mono ${options.data.length > 2500 ? 'text-red-500' : options.data.length > 2000 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText}`}>
-            {options.data.length} / 2500
-          </span>
+          {(() => {
+            const bytes = new TextEncoder().encode(options.data).length;
+            const warn = bytes > 1800 ? 'text-red-500' : bytes > 1400 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText;
+            return (
+              <span className={`text-xs font-mono ${warn}`}>
+                {bytes} / 1800 字节
+              </span>
+            );
+          })()}
         </div>
         <textarea
           value={options.data}
           onChange={(e) => onChange({ data: e.target.value })}
           placeholder="输入文字或粘贴链接..."
           className={`w-full border rounded-lg p-3 text-sm resize-none h-20 focus:outline-none focus:ring-2 transition-colors ${
-            options.data.length > 2500
+            new TextEncoder().encode(options.data).length > 1800
               ? isDark ? 'border-red-700 focus:ring-red-700' : 'border-red-400 focus:ring-red-400'
               : inputCls
           }`}

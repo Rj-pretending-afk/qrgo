@@ -2,9 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import type { QROptions } from '../types/qr.types';
 
-const MAX_DATA_LENGTH = 2500;
-// Render at 2x for crisp display on retina screens; CSS scales it to 280px
 const QR_PIXEL_SIZE = 560;
+
+// qrcode-generator (used internally by qr-code-styling) only stores the low 8 bits
+// of each character's codepoint in Byte mode. For non-ASCII data (Chinese, etc.)
+// this drops the high byte and produces garbage when scanned.
+// Fix: manually convert the string to UTF-8 bytes represented as Latin-1 characters.
+// Each resulting "character" has charCode ≤ 255, so the library stores the correct byte.
+// Scanners that decode Byte mode as UTF-8 (all modern ones) will then show correct text.
+const toQRSafeData = (str: string): string => {
+  if (!/[^\x00-\x7F]/.test(str)) return str; // pure ASCII — no conversion needed
+  const bytes = new TextEncoder().encode(str);
+  return Array.from(bytes, b => String.fromCharCode(b)).join('');
+};
+
+// Byte length limit: QR version 40 at M level holds 2331 bytes.
+// Chinese chars = 3 bytes each; use a safe margin.
+const MAX_BYTES = 1800;
 
 export function useQRCode(options: QROptions) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,8 +49,9 @@ export function useQRCode(options: QROptions) {
       return;
     }
 
-    if (options.data.length > MAX_DATA_LENGTH) {
-      setError(`内容过长（${options.data.length} 字符），二维码最多支持约 ${MAX_DATA_LENGTH} 字符`);
+    const byteLen = new TextEncoder().encode(options.data).length;
+    if (byteLen > MAX_BYTES) {
+      setError(`内容过长（${byteLen} 字节），请减少内容`);
       return;
     }
 
@@ -44,7 +59,7 @@ export function useQRCode(options: QROptions) {
     setIsGenerating(true);
 
     qrCode.current!.update({
-      data: options.data,
+      data: toQRSafeData(options.data),
       dotsOptions: { color: options.foregroundColor, type: options.dotStyle },
       backgroundOptions: { color: options.backgroundColor },
       cornersSquareOptions: { type: options.cornerStyle },
@@ -70,7 +85,11 @@ export function useQRCode(options: QROptions) {
     qrCode.current?.download({ name: 'qrgo', extension });
   };
 
-  const getCanvas = () => containerRef.current?.querySelector('canvas') ?? null;
+  // Use last canvas in container — robust against any library-internal canvas recreation
+  const getCanvas = (): HTMLCanvasElement | null => {
+    const all = containerRef.current?.querySelectorAll('canvas');
+    return all && all.length > 0 ? (all[all.length - 1] as HTMLCanvasElement) : null;
+  };
 
   return { containerRef, download, getCanvas, isGenerating, error };
 }
