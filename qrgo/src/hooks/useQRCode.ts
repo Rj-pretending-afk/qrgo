@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import QRCodeStyling from 'qr-code-styling';
-import { QROptions } from '../types/qr.types';
+import type { QROptions } from '../types/qr.types';
 
 export function useQRCode(options: QROptions) {
   const containerRef = useRef<HTMLDivElement>(null);

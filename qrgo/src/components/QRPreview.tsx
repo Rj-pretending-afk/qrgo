@@ -1,5 +1,5 @@
 import { useQRCode } from '../hooks/useQRCode';
-import { QROptions } from '../types/qr.types';
+import type { QROptions } from '../types/qr.types';
 
 interface Props {
   options: QROptions;
