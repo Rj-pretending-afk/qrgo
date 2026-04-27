@@ -48,26 +48,33 @@ const CORNER_STYLES: { value: CornerStyle; label: string; icon: string }[] = [
 export function InputPanel({ options, onChange, isDark }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const label = isDark ? 'text-gray-300' : 'text-gray-700';
+  const label    = isDark ? 'text-gray-200' : 'text-gray-800';
   const subLabel = isDark ? 'text-gray-400' : 'text-gray-500';
-  const hexText = isDark ? 'text-gray-500' : 'text-gray-400';
+  const hexText  = isDark ? 'text-gray-500' : 'text-gray-400';
   const inputCls = isDark
     ? 'bg-[#2A2A3E] border-gray-600 text-gray-200 placeholder-gray-500 focus:ring-gray-500'
-    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-[#1A1A2E]';
-  const styleBtnBase = 'flex-1 py-2 rounded-lg text-xs font-medium border transition-colors';
+    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-[#1A1A2E]';
+  const styleBtnBase   = 'flex-1 py-2 rounded-lg text-xs font-semibold border transition-all';
   const styleBtnActive = isDark
-    ? 'bg-white text-[#1A1A2E] border-white'
-    : 'bg-[#1A1A2E] text-white border-[#1A1A2E]';
+    ? 'bg-white text-[#1A1A2E] border-white shadow-md'
+    : 'bg-[#1A1A2E] text-white border-[#1A1A2E] shadow-md';
   const styleBtnInactive = isDark
-    ? 'bg-transparent text-gray-400 border-gray-600 hover:border-gray-400'
-    : 'bg-transparent text-gray-500 border-gray-200 hover:border-gray-400';
+    ? 'bg-transparent text-gray-400 border-gray-600 hover:border-gray-400 hover:shadow-sm'
+    : 'bg-transparent text-gray-500 border-gray-300 hover:border-gray-400 hover:shadow-sm';
+
+  // Detect active template by comparing key color/style fields
+  const activeTemplateIdx = TEMPLATES.findIndex(t =>
+    t.options.foregroundColor === options.foregroundColor &&
+    t.options.backgroundColor === options.backgroundColor &&
+    t.options.dotStyle        === options.dotStyle &&
+    t.options.cornerStyle     === options.cornerStyle
+  );
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (options.logoUrl) URL.revokeObjectURL(options.logoUrl);
-    const url = URL.createObjectURL(file);
-    onChange({ logoUrl: url, errorCorrectionLevel: 'H' });
+    onChange({ logoUrl: URL.createObjectURL(file), errorCorrectionLevel: 'H' });
   };
 
   const handleRemoveLogo = () => {
@@ -81,35 +88,41 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 预设模板 */}
       <div>
-        <label className={`block text-base font-medium mb-2 ${label}`}>预设模板</label>
+        <label className={`block text-base font-semibold mb-2 ${label}`}>预设模板</label>
         <div className="flex gap-2">
-          {TEMPLATES.map((t) => (
-            <button
-              key={t.name}
-              onClick={() => onChange(t.options)}
-              className={`flex-1 overflow-hidden rounded-lg border text-xs font-medium transition-colors flex items-stretch ${
-                isDark ? 'border-gray-600 text-gray-300 hover:border-gray-400' : 'border-gray-200 text-gray-600 hover:border-gray-400'
-              }`}
-            >
-              <span
-                className="w-[30px] shrink-0"
-                style={{ backgroundColor: t.foregroundColor }}
-              />
-              <span
-                className="flex flex-1 items-center justify-end py-2 pl-2 pr-3 text-right"
-                style={{ backgroundColor: t.backgroundColor, color: t.foregroundColor }}
+          {TEMPLATES.map((t, idx) => {
+            const isActive = idx === activeTemplateIdx;
+            return (
+              <button
+                key={t.name}
+                onClick={() => onChange(t.options)}
+                className={`flex-1 overflow-hidden rounded-lg border text-xs font-semibold transition-all flex items-stretch ${
+                  isActive
+                    ? isDark
+                      ? 'border-white shadow-[0_0_0_2px_white,0_4px_16px_rgba(0,0,0,0.5)]'
+                      : 'border-[#1A1A2E] shadow-[0_0_0_2px_#1A1A2E,0_4px_16px_rgba(0,0,0,0.18)]'
+                    : isDark
+                      ? 'border-gray-600 shadow-md hover:border-gray-400 hover:shadow-lg'
+                      : 'border-gray-300 shadow-md hover:border-gray-500 hover:shadow-lg'
+                }`}
               >
-                {t.name}
-              </span>
-            </button>
-          ))}
+                <span className="w-[28px] shrink-0" style={{ backgroundColor: t.foregroundColor }} />
+                <span
+                  className="flex flex-1 items-center justify-end py-2 pl-2 pr-3 text-right"
+                  style={{ backgroundColor: t.backgroundColor, color: t.foregroundColor }}
+                >
+                  {t.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* 内容输入 */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={`block text-base font-medium ${label}`}>内容（文字 / 链接）</label>
+          <label className={`block text-base font-semibold ${label}`}>内容（文字 / 链接）</label>
           <span className={`text-xs font-mono ${options.data.length > 2500 ? 'text-red-500' : options.data.length > 2000 ? (isDark ? 'text-yellow-400' : 'text-amber-500') : hexText}`}>
             {options.data.length} / 2500
           </span>
@@ -128,14 +141,14 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 颜色 */}
       <div>
-        <label className={`block text-base font-medium mb-1.5 ${label}`}>颜色</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>颜色</label>
         <div className="flex gap-4">
           <div className="flex-1">
             <p className={`text-xs mb-1 ${subLabel}`}>前景色</p>
             <div className="flex items-center gap-2">
               <input type="color" value={options.foregroundColor}
                 onChange={(e) => onChange({ foregroundColor: e.target.value })}
-                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
+                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
               <span className={`text-xs font-mono ${hexText}`}>{options.foregroundColor}</span>
             </div>
           </div>
@@ -144,7 +157,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
             <div className="flex items-center gap-2">
               <input type="color" value={options.backgroundColor}
                 onChange={(e) => onChange({ backgroundColor: e.target.value })}
-                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
+                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
               <span className={`text-xs font-mono ${hexText}`}>{options.backgroundColor}</span>
             </div>
           </div>
@@ -153,7 +166,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 点阵样式 */}
       <div>
-        <label className={`block text-base font-medium mb-1.5 ${label}`}>点阵样式</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>点阵样式</label>
         <div className="flex gap-2">
           {DOT_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ dotStyle: s.value })}
@@ -166,7 +179,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 定位符样式 */}
       <div>
-        <label className={`block text-base font-medium mb-1.5 ${label}`}>定位符样式</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>定位符样式</label>
         <div className="flex gap-2">
           {CORNER_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ cornerStyle: s.value })}
@@ -177,9 +190,45 @@ export function InputPanel({ options, onChange, isDark }: Props) {
         </div>
       </div>
 
+      {/* 边框设置 */}
+      <div>
+        <label className={`block text-base font-semibold mb-3 ${label}`}>边框设置</label>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className={`text-sm ${subLabel}`}>内边距</span>
+              <span className={`text-sm font-mono ${hexText}`}>{options.framePadding}px</span>
+            </div>
+            <input type="range" min={0} max={60} step={4}
+              value={options.framePadding}
+              onChange={(e) => onChange({ framePadding: Number(e.target.value) })}
+              className="w-full accent-current" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className={`text-sm ${subLabel}`}>圆角</span>
+              <span className={`text-sm font-mono ${hexText}`}>{options.frameRadius}px</span>
+            </div>
+            <input type="range" min={0} max={60} step={4}
+              value={options.frameRadius}
+              onChange={(e) => onChange({ frameRadius: Number(e.target.value) })}
+              className="w-full" />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={options.labelsInFrame}
+              onChange={(e) => onChange({ labelsInFrame: e.target.checked })}
+              className="w-4 h-4 rounded accent-current"
+            />
+            <span className={`text-sm ${subLabel}`}>文字标签包含在边框内</span>
+          </label>
+        </div>
+      </div>
+
       {/* Logo 上传 */}
       <div>
-        <label className={`block text-base font-medium mb-1.5 ${label}`}>中心 Logo</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>中心 Logo</label>
         {options.logoUrl ? (
           <div className="flex items-center gap-3">
             <img src={options.logoUrl} className={`w-14 h-14 rounded-lg object-contain border ${isDark ? 'border-gray-600 bg-white/10' : 'border-gray-200 bg-gray-50'}`} />
@@ -198,7 +247,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
         ) : (
           <button onClick={() => fileInputRef.current?.click()}
             className={`w-full py-2.5 border-2 border-dashed rounded-lg text-sm transition-colors ${
-              isDark ? 'border-gray-600 text-gray-400 hover:border-gray-400' : 'border-gray-200 text-gray-400 hover:border-gray-400'
+              isDark ? 'border-gray-600 text-gray-400 hover:border-gray-400' : 'border-gray-300 text-gray-400 hover:border-gray-400'
             }`}>
             + 上传图片
           </button>
@@ -213,7 +262,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 纠错等级 */}
       <div>
-        <label className={`block text-base font-medium mb-1.5 ${label}`}>纠错等级</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>纠错等级</label>
         <select value={options.errorCorrectionLevel}
           onChange={(e) => onChange({ errorCorrectionLevel: e.target.value as ErrorCorrectionLevel })}
           className={`w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${inputCls}`}>

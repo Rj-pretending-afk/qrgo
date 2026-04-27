@@ -14,6 +14,9 @@ const defaultOptions: QROptions = {
   cornerStyle: 'square',
   logoUrl: '',
   logoSize: 0.3,
+  framePadding: 20,
+  frameRadius: 20,
+  labelsInFrame: false,
 };
 
 const defaultLabel: LabelConfig = {

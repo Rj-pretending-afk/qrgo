@@ -12,6 +12,9 @@ export interface QROptions {
   cornerStyle: CornerStyle;
   logoUrl: string;
   logoSize: number;
+  framePadding: number;
+  frameRadius: number;
+  labelsInFrame: boolean;
 }
 
 export interface LabelConfig {
