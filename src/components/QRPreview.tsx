@@ -70,7 +70,7 @@ export function QRPreview({ options, labels, isDark }: Props) {
     const rightW = vW(labels.right);
     const anyLabels = topH > 0 || botH > 0 || leftW > 0 || rightW > 0;
 
-    if (framePad === 0 && !anyLabels) return qrCanvas;
+    if (framePad === 0 && frameRad === 0 && !anyLabels) return qrCanvas;
 
     const roundedPath = (
       ctx: CanvasRenderingContext2D,
@@ -142,16 +142,25 @@ export function QRPreview({ options, labels, isDark }: Props) {
       drawV(ctx, labels.right,  framePad + leftW + qrSize + rightW / 2, framePad + topH + qrSize / 2);
       ctx.restore();
     } else {
-      // Labels OUTSIDE frame (or no labels) → flat rectangle
+      // Labels OUTSIDE frame (or no labels):
+      // QR frame gets rounded clip → transparent corners; labels drawn on transparent outer area
       const qrFrameW = framePad * 2 + qrSize;
       const qrFrameH = framePad * 2 + qrSize;
       const cw = leftW + qrFrameW + rightW;
       const ch = topH  + qrFrameH + botH;
       canvas.width  = cw;
       canvas.height = ch;
+
+      // Clip QR frame area to rounded rect, fill + draw QR inside it
+      ctx.save();
+      roundedPath(ctx, leftW, topH, qrFrameW, qrFrameH, frameRad);
+      ctx.clip();
       ctx.fillStyle = options.backgroundColor;
-      ctx.fillRect(0, 0, cw, ch);
+      ctx.fillRect(0, 0, cw, ch); // fillRect is clipped to rounded path
       ctx.drawImage(qrCanvas, leftW + framePad, topH + framePad);
+      ctx.restore();
+
+      // Labels float on the transparent outer area
       if (anyLabels) {
         drawH(ctx, labels.top,    cw / 2,                           0);
         drawH(ctx, labels.bottom, cw / 2,                           topH + qrFrameH + gap / 2);
