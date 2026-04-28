@@ -22,9 +22,12 @@ const defaultOptions: QROptions = {
 const defaultLabel: LabelConfig = {
   enabled: false,
   text: '',
-  fontSize: 18,
-  fontFamily:  "'Inter', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif",
+  fontSize: 35,
+  fontFamily: "'Inter', 'Microsoft YaHei UI', 'PingFang SC', system-ui, sans-serif",
   color: '#333333',
+  bold: false,
+  italic: false,
+  shadow: true,
 };
 
 const defaultLabels: QRLabels = {
@@ -57,7 +60,8 @@ function App() {
   const [labels, setLabels] = useState<QRLabels>(defaultLabels);
   const [isDark, setIsDark] = useState(true);
   const [language, setLanguage] = useState<Language>('zh');
-  const [mode, setMode] = useState<AppMode>('custom');
+  const [mode, setMode] = useState<AppMode>('simple');
+  const [qrDisplaySize, setQrDisplaySize] = useState(280);
 
   const theme = isDark ? darkTheme : lightTheme;
   const isEnglish = language === 'en';
@@ -134,7 +138,14 @@ function App() {
         {/* 右侧预览区 */}
         <div className={`flex-1 rounded-xl shadow-sm p-5 flex items-center justify-center ${theme.card}`}
           style={{ minHeight: '400px' }}>
-          <QRPreview options={displayOptions} labels={displayLabels} isDark={isDark} language={language} />
+          <QRPreview
+            options={displayOptions}
+            labels={displayLabels}
+            isDark={isDark}
+            language={language}
+            qrDisplaySize={qrDisplaySize}
+            onQrDisplaySizeChange={setQrDisplaySize}
+          />
         </div>
       </main>
     </div>

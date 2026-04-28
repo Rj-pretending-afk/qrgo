@@ -1,5 +1,6 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle, Language, AppMode } from '../types/qr.types';
+import { CropModal } from './CropModal';
 
 interface Props {
   options: QROptions;
@@ -53,6 +54,7 @@ const CORNER_STYLES: { value: CornerStyle; label: string; labelEn: string; icon:
 
 export function InputPanel({ options, onChange, isDark, language, mode }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const isEnglish = language === 'en';
   const isSimple = mode === 'simple';
 
@@ -87,7 +89,19 @@ export function InputPanel({ options, onChange, isDark, language, mode }: Props)
     const file = e.target.files?.[0];
     if (!file) return;
     if (options.logoUrl) URL.revokeObjectURL(options.logoUrl);
-    onChange({ logoUrl: URL.createObjectURL(file), errorCorrectionLevel: 'H' });
+    setCropSrc(URL.createObjectURL(file));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropConfirm = (croppedUrl: string) => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    onChange({ logoUrl: croppedUrl, errorCorrectionLevel: 'H' });
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   };
 
   const handleRemoveLogo = () => {
@@ -97,6 +111,7 @@ export function InputPanel({ options, onChange, isDark, language, mode }: Props)
   };
 
   return (
+    <>
     <div className="space-y-5">
 
       {/* 预设模板 */}
@@ -290,5 +305,16 @@ export function InputPanel({ options, onChange, isDark, language, mode }: Props)
       )}
 
     </div>
+
+    {cropSrc && (
+      <CropModal
+        src={cropSrc}
+        isDark={isDark}
+        language={language}
+        onConfirm={handleCropConfirm}
+        onCancel={handleCropCancel}
+      />
+    )}
+    </>
   );
 }

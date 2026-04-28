@@ -2,9 +2,10 @@ body {
   font-family: 'Inter', 'Noto Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Scale 2x QR canvas down for crisp rendering on retina displays */
+/* CSS custom property set on .qr-canvas-wrap controls canvas display size.
+   The canvas pixel size stays at 560 (2x) for crisp rendering; only the CSS size changes. */
 .qr-canvas-wrap canvas {
-  width: 280px !important;
-  height: 280px !important;
+  width: var(--qr-display-size, 280px) !important;
+  height: var(--qr-display-size, 280px) !important;
   display: block;
 }
