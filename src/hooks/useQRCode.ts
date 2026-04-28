@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCodeStyling from 'qr-code-styling';
-import type { QROptions } from '../types/qr.types';
+import type { QROptions, Language } from '../types/qr.types';
 
 const QR_PIXEL_SIZE = 560;
 
@@ -20,7 +20,7 @@ const toQRSafeData = (str: string): string => {
 // Chinese chars = 3 bytes each; use a safe margin.
 const MAX_BYTES = 1800;
 
-export function useQRCode(options: QROptions) {
+export function useQRCode(options: QROptions, language: Language = 'zh') {
   const containerRef = useRef<HTMLDivElement>(null);
   const qrCode = useRef<QRCodeStyling | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -51,7 +51,11 @@ export function useQRCode(options: QROptions) {
 
     const byteLen = new TextEncoder().encode(options.data).length;
     if (byteLen > MAX_BYTES) {
-      setError(`内容过长（${byteLen} 字节），请减少内容`);
+      setError(
+        language === 'en'
+          ? `Content is too long (${byteLen} bytes). Please shorten it.`
+          : `内容过长（${byteLen} 字节），请减少内容`
+      );
       return;
     }
 
@@ -79,6 +83,7 @@ export function useQRCode(options: QROptions) {
     options.cornerStyle,
     options.logoUrl,
     options.logoSize,
+    language,
   ]);
 
   const download = (extension: 'png' | 'svg') => {

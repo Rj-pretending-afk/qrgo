@@ -1,52 +1,58 @@
 import { useRef, useMemo } from 'react';
-import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle } from '../types/qr.types';
+import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle, Language } from '../types/qr.types';
 
 interface Props {
   options: QROptions;
   onChange: (updates: Partial<QROptions>) => void;
   isDark: boolean;
+  language: Language;
 }
 
 const TEMPLATES: {
   name: string;
+  nameEn: string;
   foregroundColor: string;
   backgroundColor: string;
   options: Partial<QROptions>;
 }[] = [
   {
     name: '极简黑',
+    nameEn: 'Minimal',
     foregroundColor: '#000000',
     backgroundColor: '#FFFFFF',
     options: { foregroundColor: '#000000', backgroundColor: '#FFFFFF', dotStyle: 'square', cornerStyle: 'square' },
   },
   {
     name: '复古蓝',
+    nameEn: 'Vintage',
     foregroundColor: '#1A3A5C',
     backgroundColor: '#F0EBE3',
     options: { foregroundColor: '#1A3A5C', backgroundColor: '#F0EBE3', dotStyle: 'rounded', cornerStyle: 'extra-rounded' },
   },
   {
     name: '赛博粉',
+    nameEn: 'Cyber',
     foregroundColor: '#e761aa',
     backgroundColor: '#111122',
     options: { foregroundColor: '#e761aa', backgroundColor: '#111122', dotStyle: 'dots', cornerStyle: 'dot' },
   },
 ];
 
-const DOT_STYLES: { value: DotStyle; label: string; icon: string }[] = [
-  { value: 'square', label: '方形', icon: '■' },
-  { value: 'rounded', label: '圆角', icon: '▣' },
-  { value: 'dots', label: '圆点', icon: '●' },
+const DOT_STYLES: { value: DotStyle; label: string; labelEn: string; icon: string }[] = [
+  { value: 'square', label: '方形', labelEn: 'Square', icon: '■' },
+  { value: 'rounded', label: '圆角', labelEn: 'Rounded', icon: '▣' },
+  { value: 'dots', label: '圆点', labelEn: 'Dots', icon: '●' },
 ];
 
-const CORNER_STYLES: { value: CornerStyle; label: string; icon: string }[] = [
-  { value: 'square', label: '方角', icon: '□' },
-  { value: 'extra-rounded', label: '圆角', icon: '⬜' },
-  { value: 'dot', label: '圆点', icon: '○' },
+const CORNER_STYLES: { value: CornerStyle; label: string; labelEn: string; icon: string }[] = [
+  { value: 'square', label: '方角', labelEn: 'Square', icon: '□' },
+  { value: 'extra-rounded', label: '圆角', labelEn: 'Rounded', icon: '⬜' },
+  { value: 'dot', label: '圆点', labelEn: 'Dot', icon: '○' },
 ];
 
-export function InputPanel({ options, onChange, isDark }: Props) {
+export function InputPanel({ options, onChange, isDark, language }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isEnglish = language === 'en';
 
   const label    = isDark ? 'text-gray-200' : 'text-gray-800';
   const subLabel = isDark ? 'text-gray-400' : 'text-gray-500';
@@ -93,7 +99,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 预设模板 */}
       <div>
-        <label className={`block text-base font-semibold mb-2 ${label}`}>预设模板</label>
+        <label className={`block text-base font-semibold mb-2 ${label}`}>{isEnglish ? 'Presets' : '预设模板'}</label>
         <div className="flex gap-2">
           {TEMPLATES.map((t, idx) => {
             const isActive = idx === activeTemplateIdx;
@@ -116,7 +122,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
                   className="flex flex-1 items-center justify-end py-2 pl-2 pr-3 text-right"
                   style={{ backgroundColor: t.backgroundColor, color: t.foregroundColor }}
                 >
-                  {t.name}
+                  {isEnglish ? t.nameEn : t.name}
                 </span>
               </button>
             );
@@ -127,13 +133,13 @@ export function InputPanel({ options, onChange, isDark }: Props) {
       {/* 内容输入 */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className={`block text-base font-semibold ${label}`}>内容（文字 / 链接）</label>
-          <span className={`text-xs font-mono ${byteWarn}`}>{byteLen} / 1800 字节</span>
+          <label className={`block text-base font-semibold ${label}`}>{isEnglish ? 'Content (text / link)' : '内容（文字 / 链接）'}</label>
+          <span className={`text-xs font-mono ${byteWarn}`}>{byteLen} / 1800 {isEnglish ? 'bytes' : '字节'}</span>
         </div>
         <textarea
           value={options.data}
           onChange={(e) => onChange({ data: e.target.value })}
-          placeholder="输入文字或粘贴链接..."
+          placeholder={isEnglish ? 'Enter text or paste a link...' : '输入文字或粘贴链接...'}
           className={`w-full border rounded-lg p-3 text-sm resize-none h-20 focus:outline-none focus:ring-2 transition-colors ${
             byteLen > 1800
               ? isDark ? 'border-red-700 focus:ring-red-700' : 'border-red-400 focus:ring-red-400'
@@ -144,10 +150,10 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 颜色 */}
       <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>颜色</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Colors' : '颜色'}</label>
         <div className="flex gap-4">
           <div className="flex-1">
-            <p className={`text-xs mb-1 ${subLabel}`}>前景色</p>
+            <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Foreground' : '前景色'}</p>
             <div className="flex items-center gap-2">
               <input type="color" value={options.foregroundColor}
                 onChange={(e) => onChange({ foregroundColor: e.target.value })}
@@ -156,7 +162,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
             </div>
           </div>
           <div className="flex-1">
-            <p className={`text-xs mb-1 ${subLabel}`}>背景色</p>
+            <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Background' : '背景色'}</p>
             <div className="flex items-center gap-2">
               <input type="color" value={options.backgroundColor}
                 onChange={(e) => onChange({ backgroundColor: e.target.value })}
@@ -169,12 +175,12 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 点阵样式 */}
       <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>点阵样式</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Dot Style' : '点阵样式'}</label>
         <div className="flex gap-2">
           {DOT_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ dotStyle: s.value })}
               className={`${styleBtnBase} ${options.dotStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
-              {s.icon} {s.label}
+              {s.icon} {isEnglish ? s.labelEn : s.label}
             </button>
           ))}
         </div>
@@ -182,12 +188,12 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 定位符样式 */}
       <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>定位符样式</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Corner Style' : '定位符样式'}</label>
         <div className="flex gap-2">
           {CORNER_STYLES.map((s) => (
             <button key={s.value} onClick={() => onChange({ cornerStyle: s.value })}
               className={`${styleBtnBase} ${options.cornerStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
-              {s.icon} {s.label}
+              {s.icon} {isEnglish ? s.labelEn : s.label}
             </button>
           ))}
         </div>
@@ -195,11 +201,11 @@ export function InputPanel({ options, onChange, isDark }: Props) {
 
       {/* 边框设置 */}
       <div>
-        <label className={`block text-base font-semibold mb-3 ${label}`}>边框设置</label>
+        <label className={`block text-base font-semibold mb-3 ${label}`}>{isEnglish ? 'Frame Settings' : '边框设置'}</label>
         <div className="space-y-3">
           <div>
             <div className="flex justify-between mb-1">
-              <span className={`text-sm ${subLabel}`}>内边距</span>
+              <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Padding' : '内边距'}</span>
               <span className={`text-sm font-mono ${hexText}`}>{options.framePadding}px</span>
             </div>
             <input type="range" min={0} max={60} step={4}
@@ -209,7 +215,7 @@ export function InputPanel({ options, onChange, isDark }: Props) {
           </div>
           <div>
             <div className="flex justify-between mb-1">
-              <span className={`text-sm ${subLabel}`}>圆角</span>
+              <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Radius' : '圆角'}</span>
               <span className={`text-sm font-mono ${hexText}`}>{options.frameRadius}px</span>
             </div>
             <input type="range" min={0} max={60} step={4}
@@ -224,14 +230,14 @@ export function InputPanel({ options, onChange, isDark }: Props) {
               onChange={(e) => onChange({ labelsInFrame: e.target.checked })}
               className="w-4 h-4 rounded accent-current"
             />
-            <span className={`text-sm ${subLabel}`}>文字标签包含在边框内</span>
+            <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Keep text labels inside the frame' : '文字标签包含在边框内'}</span>
           </label>
         </div>
       </div>
 
       {/* Logo 上传 */}
       <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>中心 Logo</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Center Logo' : '中心 Logo'}</label>
         {options.logoUrl ? (
           <div className="flex items-center gap-3">
             <img src={options.logoUrl} className={`w-14 h-14 rounded-lg object-contain border ${isDark ? 'border-gray-600 bg-white/10' : 'border-gray-200 bg-gray-50'}`} />
@@ -240,11 +246,11 @@ export function InputPanel({ options, onChange, isDark }: Props) {
                 value={options.logoSize}
                 onChange={(e) => onChange({ logoSize: parseFloat(e.target.value) })}
                 className="w-full" />
-              <p className={`text-xs mt-0.5 ${subLabel}`}>大小 {Math.round(options.logoSize * 100)}%</p>
+              <p className={`text-xs mt-0.5 ${subLabel}`}>{isEnglish ? 'Size' : '大小'} {Math.round(options.logoSize * 100)}%</p>
             </div>
             <button onClick={handleRemoveLogo}
               className={`text-xs px-2 py-1 rounded border ${isDark ? 'border-gray-600 text-gray-400 hover:text-red-400' : 'border-gray-200 text-gray-400 hover:text-red-500'}`}>
-              移除
+              {isEnglish ? 'Remove' : '移除'}
             </button>
           </div>
         ) : (
@@ -252,27 +258,27 @@ export function InputPanel({ options, onChange, isDark }: Props) {
             className={`w-full py-2.5 border-2 border-dashed rounded-lg text-sm transition-colors ${
               isDark ? 'border-gray-600 text-gray-400 hover:border-gray-400' : 'border-gray-300 text-gray-400 hover:border-gray-400'
             }`}>
-            + 上传图片
+            {isEnglish ? '+ Upload Image' : '+ 上传图片'}
           </button>
         )}
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         {options.logoUrl && (
           <p className={`text-xs mt-1 ${isDark ? 'text-yellow-500' : 'text-amber-600'}`}>
-            ⚠ 已自动切换为 H 级纠错
+            {isEnglish ? '⚠ Error correction was switched to H automatically' : '⚠ 已自动切换为 H 级纠错'}
           </p>
         )}
       </div>
 
       {/* 纠错等级 */}
       <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>纠错等级</label>
+        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Error Correction' : '纠错等级'}</label>
         <select value={options.errorCorrectionLevel}
           onChange={(e) => onChange({ errorCorrectionLevel: e.target.value as ErrorCorrectionLevel })}
           className={`w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${inputCls}`}>
-          <option value="L">L · 低（7%）</option>
-          <option value="M">M · 中（15%）</option>
-          <option value="Q">Q · 较高（25%）</option>
-          <option value="H">H · 高（30%，推荐加 Logo）</option>
+          <option value="L">{isEnglish ? 'L · Low (7%)' : 'L · 低（7%）'}</option>
+          <option value="M">{isEnglish ? 'M · Medium (15%)' : 'M · 中（15%）'}</option>
+          <option value="Q">{isEnglish ? 'Q · High (25%)' : 'Q · 较高（25%）'}</option>
+          <option value="H">{isEnglish ? 'H · Highest (30%, recommended with Logo)' : 'H · 高（30%，推荐加 Logo）'}</option>
         </select>
       </div>
 

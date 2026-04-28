@@ -1,31 +1,34 @@
 import { useState } from 'react';
-import type { QRLabels, LabelPosition, LabelConfig } from '../types/qr.types';
+import type { QRLabels, LabelPosition, LabelConfig, Language } from '../types/qr.types';
 
 interface Props {
   labels: QRLabels;
   onChange: (pos: LabelPosition, updates: Partial<LabelConfig>) => void;
   isDark: boolean;
+  language: Language;
 }
 
-const POSITIONS: { value: LabelPosition; label: string }[] = [
-  { value: 'top', label: '上' },
-  { value: 'bottom', label: '下' },
-  { value: 'left', label: '左' },
-  { value: 'right', label: '右' },
+const POSITIONS: { value: LabelPosition; label: string; labelEn: string }[] = [
+  { value: 'top', label: '上', labelEn: 'Top' },
+  { value: 'bottom', label: '下', labelEn: 'Bottom' },
+  { value: 'left', label: '左', labelEn: 'Left' },
+  { value: 'right', label: '右', labelEn: 'Right' },
 ];
 
 const FONTS = [
-  { value: "'Inter', 'Noto Sans SC', system-ui, sans-serif", label: 'Inter（默认）' },
+  { value: "'Inter', 'Noto Sans SC', system-ui, sans-serif", label: 'Inter（默认）', labelEn: 'Inter (Default)' },
   { value: "'Noto Sans SC', sans-serif", label: 'Noto Sans SC' },
-  { value: 'serif', label: '衬线体' },
-  { value: 'monospace', label: '等宽体' },
-  { value: "'Microsoft YaHei', 'PingFang SC', sans-serif", label: '微软雅黑' },
-  { value: "'SimSun', serif", label: '宋体' },
+  { value: 'serif', label: '衬线体', labelEn: 'Serif' },
+  { value: 'monospace', label: '等宽体', labelEn: 'Monospace' },
+  { value: "'Microsoft YaHei', 'PingFang SC', sans-serif", label: '微软雅黑', labelEn: 'Microsoft YaHei' },
+  { value: "'SimSun', serif", label: '宋体', labelEn: 'SimSun' },
 ];
 
-export function LabelPanel({ labels, onChange, isDark }: Props) {
+export function LabelPanel({ labels, onChange, isDark, language }: Props) {
   const [activePos, setActivePos] = useState<LabelPosition>('top');
   const cfg = labels[activePos];
+  const isEnglish = language === 'en';
+  const activePosition = POSITIONS.find(p => p.value === activePos);
 
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const inputCls = isDark
@@ -50,7 +53,7 @@ export function LabelPanel({ labels, onChange, isDark }: Props) {
               activePos === p.value ? tabActive : tabInactive
             }`}
           >
-            {p.label}
+            {isEnglish ? p.labelEn : p.label}
             {labels[p.value].enabled && labels[p.value].text.trim() && (
               <span className="ml-1 text-xs opacity-60">●</span>
             )}
@@ -66,7 +69,9 @@ export function LabelPanel({ labels, onChange, isDark }: Props) {
           onChange={(e) => onChange(activePos, { enabled: e.target.checked })}
           className="w-4 h-4 rounded"
         />
-        <span className={`text-sm ${label}`}>启用{POSITIONS.find(p => p.value === activePos)?.label}方标签</span>
+        <span className={`text-sm ${label}`}>
+          {isEnglish ? `Enable ${activePosition?.labelEn} label` : `启用${activePosition?.label}方标签`}
+        </span>
       </label>
 
       {cfg.enabled && (
@@ -75,7 +80,11 @@ export function LabelPanel({ labels, onChange, isDark }: Props) {
           <textarea
             value={cfg.text}
             onChange={(e) => onChange(activePos, { text: e.target.value })}
-            placeholder={activePos === 'left' || activePos === 'right' ? '竖排文字（支持换行）' : '输入标签文字（支持换行）'}
+            placeholder={
+              activePos === 'left' || activePos === 'right'
+                ? isEnglish ? 'Vertical text (line breaks supported)' : '竖排文字（支持换行）'
+                : isEnglish ? 'Enter label text (line breaks supported)' : '输入标签文字（支持换行）'
+            }
             rows={3}
             className={`w-full border rounded-lg p-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A1A2E] transition-colors ${inputCls}`}
           />
@@ -88,7 +97,7 @@ export function LabelPanel({ labels, onChange, isDark }: Props) {
               className={`flex-1 border rounded-lg p-2 text-sm focus:outline-none transition-colors ${inputCls}`}
             >
               {FONTS.map((f) => (
-                <option key={f.value} value={f.value}>{f.label}</option>
+                <option key={f.value} value={f.value}>{isEnglish ? (f.labelEn ?? f.label) : f.label}</option>
               ))}
             </select>
             <div className="flex items-center gap-1.5">
@@ -106,7 +115,7 @@ export function LabelPanel({ labels, onChange, isDark }: Props) {
 
           {/* 文字颜色 */}
           <div className="flex items-center gap-2">
-            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>颜色</span>
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{isEnglish ? 'Color' : '颜色'}</span>
             <input
               type="color"
               value={cfg.color}

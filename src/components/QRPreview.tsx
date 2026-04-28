@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useQRCode } from '../hooks/useQRCode';
-import type { QROptions, QRLabels, LabelConfig } from '../types/qr.types';
+import type { QROptions, QRLabels, LabelConfig, Language } from '../types/qr.types';
 
 interface Props {
   options: QROptions;
   labels: QRLabels;
   isDark: boolean;
+  language: Language;
 }
 
 const DISPLAY_SIZE = 280;
@@ -38,9 +39,10 @@ function LabelEl({
   return <div style={style}>{cfg.text}</div>;
 }
 
-export function QRPreview({ options, labels, isDark }: Props) {
-  const { containerRef, download, getCanvas, isGenerating, error } = useQRCode(options);
+export function QRPreview({ options, labels, isDark, language }: Props) {
+  const { containerRef, download, getCanvas, isGenerating, error } = useQRCode(options, language);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const isEnglish = language === 'en';
 
   const isEmpty = !options.data.trim();
   const show    = (cfg: LabelConfig) => cfg.enabled && !!cfg.text.trim();
@@ -216,7 +218,11 @@ export function QRPreview({ options, labels, isDark }: Props) {
   );
 
   const labelProps = { isEmpty, isDark };
-  const copyLabel  = copyState === 'copied' ? '已复制' : copyState === 'failed' ? '复制失败' : '复制';
+  const copyLabel  = copyState === 'copied'
+    ? isEnglish ? 'Copied' : '已复制'
+    : copyState === 'failed'
+      ? isEnglish ? 'Copy Failed' : '复制失败'
+      : isEnglish ? 'Copy' : '复制';
   let copyBtnCls: string;
   if (copyState === 'copied')      copyBtnCls = isDark ? 'border-green-500 text-green-400' : 'border-green-500 text-green-600';
   else if (copyState === 'failed') copyBtnCls = isDark ? 'border-red-500 text-red-400'    : 'border-red-400 text-red-500';
@@ -239,10 +245,10 @@ export function QRPreview({ options, labels, isDark }: Props) {
             {isEmpty && (
               <Overlay>
                 <p className="text-sm font-medium" style={{ color: isDark ? '#d1d5db' : '#6b7280', textShadow: '0 1px 2px rgba(0,0,0,0.15)' }}>
-                  在左侧输入内容
+                  {isEnglish ? 'Enter content on the left' : '在左侧输入内容'}
                 </p>
                 <p className="text-xs" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
-                  即可生成二维码
+                  {isEnglish ? 'to generate a QR code' : '即可生成二维码'}
                 </p>
               </Overlay>
             )}
@@ -282,14 +288,14 @@ export function QRPreview({ options, labels, isDark }: Props) {
           className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-40 hover:opacity-85 ${isDark ? 'bg-white text-[#1A1A2E]' : 'bg-[#1A1A2E] text-white'}`}
           style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
         >
-          下载 PNG
+          {isEnglish ? 'Download PNG' : '下载 PNG'}
         </button>
         <button
           onClick={() => download('svg')}
           disabled={isEmpty || !!error}
           className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors border disabled:opacity-40 ${isDark ? 'border-gray-500 text-gray-200 hover:bg-white/10' : 'border-gray-400 text-gray-700 hover:bg-gray-100'}`}
         >
-          下载 SVG
+          {isEnglish ? 'Download SVG' : '下载 SVG'}
         </button>
         <button
           onClick={handleCopy}
