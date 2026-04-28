@@ -3,6 +3,7 @@ export type DotStyle = 'square' | 'rounded' | 'dots';
 export type CornerStyle = 'square' | 'extra-rounded' | 'dot';
 export type LabelPosition = 'top' | 'bottom' | 'left' | 'right';
 export type Language = 'zh' | 'en';
+export type AppMode = 'simple' | 'custom';
 
 export interface QROptions {
   data: string;

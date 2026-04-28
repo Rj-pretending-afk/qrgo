@@ -1,11 +1,12 @@
 import { useRef, useMemo } from 'react';
-import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle, Language } from '../types/qr.types';
+import type { QROptions, ErrorCorrectionLevel, DotStyle, CornerStyle, Language, AppMode } from '../types/qr.types';
 
 interface Props {
   options: QROptions;
   onChange: (updates: Partial<QROptions>) => void;
   isDark: boolean;
   language: Language;
+  mode: AppMode;
 }
 
 const TEMPLATES: {
@@ -50,9 +51,10 @@ const CORNER_STYLES: { value: CornerStyle; label: string; labelEn: string; icon:
   { value: 'dot', label: '圆点', labelEn: 'Dot', icon: '○' },
 ];
 
-export function InputPanel({ options, onChange, isDark, language }: Props) {
+export function InputPanel({ options, onChange, isDark, language, mode }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEnglish = language === 'en';
+  const isSimple = mode === 'simple';
 
   const label    = isDark ? 'text-gray-200' : 'text-gray-800';
   const subLabel = isDark ? 'text-gray-400' : 'text-gray-500';
@@ -148,92 +150,96 @@ export function InputPanel({ options, onChange, isDark, language }: Props) {
         />
       </div>
 
-      {/* 颜色 */}
-      <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Colors' : '颜色'}</label>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Foreground' : '前景色'}</p>
-            <div className="flex items-center gap-2">
-              <input type="color" value={options.foregroundColor}
-                onChange={(e) => onChange({ foregroundColor: e.target.value })}
-                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
-              <span className={`text-xs font-mono ${hexText}`}>{options.foregroundColor}</span>
-            </div>
-          </div>
-          <div className="flex-1">
-            <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Background' : '背景色'}</p>
-            <div className="flex items-center gap-2">
-              <input type="color" value={options.backgroundColor}
-                onChange={(e) => onChange({ backgroundColor: e.target.value })}
-                className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
-              <span className={`text-xs font-mono ${hexText}`}>{options.backgroundColor}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 点阵样式 */}
-      <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Dot Style' : '点阵样式'}</label>
-        <div className="flex gap-2">
-          {DOT_STYLES.map((s) => (
-            <button key={s.value} onClick={() => onChange({ dotStyle: s.value })}
-              className={`${styleBtnBase} ${options.dotStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
-              {s.icon} {isEnglish ? s.labelEn : s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 定位符样式 */}
-      <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Corner Style' : '定位符样式'}</label>
-        <div className="flex gap-2">
-          {CORNER_STYLES.map((s) => (
-            <button key={s.value} onClick={() => onChange({ cornerStyle: s.value })}
-              className={`${styleBtnBase} ${options.cornerStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
-              {s.icon} {isEnglish ? s.labelEn : s.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 边框设置 */}
-      <div>
-        <label className={`block text-base font-semibold mb-3 ${label}`}>{isEnglish ? 'Frame Settings' : '边框设置'}</label>
-        <div className="space-y-3">
+      {!isSimple && (
+        <>
+          {/* 颜色 */}
           <div>
-            <div className="flex justify-between mb-1">
-              <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Padding' : '内边距'}</span>
-              <span className={`text-sm font-mono ${hexText}`}>{options.framePadding}px</span>
+            <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Colors' : '颜色'}</label>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Foreground' : '前景色'}</p>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={options.foregroundColor}
+                    onChange={(e) => onChange({ foregroundColor: e.target.value })}
+                    className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
+                  <span className={`text-xs font-mono ${hexText}`}>{options.foregroundColor}</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className={`text-xs mb-1 ${subLabel}`}>{isEnglish ? 'Background' : '背景色'}</p>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={options.backgroundColor}
+                    onChange={(e) => onChange({ backgroundColor: e.target.value })}
+                    className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-300'}`} />
+                  <span className={`text-xs font-mono ${hexText}`}>{options.backgroundColor}</span>
+                </div>
+              </div>
             </div>
-            <input type="range" min={0} max={60} step={4}
-              value={options.framePadding}
-              onChange={(e) => onChange({ framePadding: Number(e.target.value) })}
-              className="w-full accent-current" />
           </div>
+
+          {/* 点阵样式 */}
           <div>
-            <div className="flex justify-between mb-1">
-              <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Radius' : '圆角'}</span>
-              <span className={`text-sm font-mono ${hexText}`}>{options.frameRadius}px</span>
+            <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Dot Style' : '点阵样式'}</label>
+            <div className="flex gap-2">
+              {DOT_STYLES.map((s) => (
+                <button key={s.value} onClick={() => onChange({ dotStyle: s.value })}
+                  className={`${styleBtnBase} ${options.dotStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
+                  {s.icon} {isEnglish ? s.labelEn : s.label}
+                </button>
+              ))}
             </div>
-            <input type="range" min={0} max={60} step={4}
-              value={options.frameRadius}
-              onChange={(e) => onChange({ frameRadius: Number(e.target.value) })}
-              className="w-full" />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={options.labelsInFrame}
-              onChange={(e) => onChange({ labelsInFrame: e.target.checked })}
-              className="w-4 h-4 rounded accent-current"
-            />
-            <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Keep text labels inside the frame' : '文字标签包含在边框内'}</span>
-          </label>
-        </div>
-      </div>
+
+          {/* 定位符样式 */}
+          <div>
+            <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Corner Style' : '定位符样式'}</label>
+            <div className="flex gap-2">
+              {CORNER_STYLES.map((s) => (
+                <button key={s.value} onClick={() => onChange({ cornerStyle: s.value })}
+                  className={`${styleBtnBase} ${options.cornerStyle === s.value ? styleBtnActive : styleBtnInactive}`}>
+                  {s.icon} {isEnglish ? s.labelEn : s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 边框设置 */}
+          <div>
+            <label className={`block text-base font-semibold mb-3 ${label}`}>{isEnglish ? 'Frame Settings' : '边框设置'}</label>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Padding' : '内边距'}</span>
+                  <span className={`text-sm font-mono ${hexText}`}>{options.framePadding}px</span>
+                </div>
+                <input type="range" min={0} max={60} step={4}
+                  value={options.framePadding}
+                  onChange={(e) => onChange({ framePadding: Number(e.target.value) })}
+                  className="w-full accent-current" />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Radius' : '圆角'}</span>
+                  <span className={`text-sm font-mono ${hexText}`}>{options.frameRadius}px</span>
+                </div>
+                <input type="range" min={0} max={60} step={4}
+                  value={options.frameRadius}
+                  onChange={(e) => onChange({ frameRadius: Number(e.target.value) })}
+                  className="w-full" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={options.labelsInFrame}
+                  onChange={(e) => onChange({ labelsInFrame: e.target.checked })}
+                  className="w-4 h-4 rounded accent-current"
+                />
+                <span className={`text-sm ${subLabel}`}>{isEnglish ? 'Keep text labels inside the frame' : '文字标签包含在边框内'}</span>
+              </label>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Logo 上传 */}
       <div>
@@ -269,18 +275,19 @@ export function InputPanel({ options, onChange, isDark, language }: Props) {
         )}
       </div>
 
-      {/* 纠错等级 */}
-      <div>
-        <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Error Correction' : '纠错等级'}</label>
-        <select value={options.errorCorrectionLevel}
-          onChange={(e) => onChange({ errorCorrectionLevel: e.target.value as ErrorCorrectionLevel })}
-          className={`w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${inputCls}`}>
-          <option value="L">{isEnglish ? 'L · Low (7%)' : 'L · 低（7%）'}</option>
-          <option value="M">{isEnglish ? 'M · Medium (15%)' : 'M · 中（15%）'}</option>
-          <option value="Q">{isEnglish ? 'Q · High (25%)' : 'Q · 较高（25%）'}</option>
-          <option value="H">{isEnglish ? 'H · Highest (30%, recommended with Logo)' : 'H · 高（30%，推荐加 Logo）'}</option>
-        </select>
-      </div>
+      {!isSimple && (
+        <div>
+          <label className={`block text-base font-semibold mb-1.5 ${label}`}>{isEnglish ? 'Error Correction' : '纠错等级'}</label>
+          <select value={options.errorCorrectionLevel}
+            onChange={(e) => onChange({ errorCorrectionLevel: e.target.value as ErrorCorrectionLevel })}
+            className={`w-full border rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${inputCls}`}>
+            <option value="L">{isEnglish ? 'L · Low (7%)' : 'L · 低（7%）'}</option>
+            <option value="M">{isEnglish ? 'M · Medium (15%)' : 'M · 中（15%）'}</option>
+            <option value="Q">{isEnglish ? 'Q · High (25%)' : 'Q · 较高（25%）'}</option>
+            <option value="H">{isEnglish ? 'H · Highest (30%, recommended with Logo)' : 'H · 高（30%，推荐加 Logo）'}</option>
+          </select>
+        </div>
+      )}
 
     </div>
   );
