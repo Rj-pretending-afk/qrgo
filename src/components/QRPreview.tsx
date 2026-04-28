@@ -77,10 +77,22 @@ export function QRPreview({ options, labels, isDark }: Props) {
     if (framePad === 0 && frameRad === 0 && !anyLabels) return qrCanvas;
 
     const clip = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+      const cr = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
-      ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
+      ctx.roundRect(x, y, w, h, cr);
+      ctx.closePath(); // explicit close for cross-browser clip reliability
       ctx.clip();
     };
+
+    // Returns an opaque outer background that contrasts with the card color,
+    // so the rounded corners are visible on any paste target (transparent doesn't work on dark bg).
+    const outerBg = (() => {
+      const hex = options.backgroundColor.replace('#', '');
+      const lum = parseInt(hex.slice(0, 2), 16) * 0.299
+                + parseInt(hex.slice(2, 4), 16) * 0.587
+                + parseInt(hex.slice(4, 6), 16) * 0.114;
+      return lum > 128 ? '#d0d0d0' : '#ffffff';
+    })();
 
     const applyTextStyle = (ctx: CanvasRenderingContext2D, cfg: LabelConfig) => {
       ctx.font = `${cfg.fontSize * scale}px ${cfg.fontFamily}`;
@@ -119,6 +131,9 @@ export function QRPreview({ options, labels, isDark }: Props) {
       const ch = framePad + topH  + qrSize + botH  + framePad;
       canvas.width  = cw;
       canvas.height = ch;
+      // Fill outer area so rounded corners are visible on any paste background
+      ctx.fillStyle = outerBg;
+      ctx.fillRect(0, 0, cw, ch);
       ctx.save();
       clip(ctx, 0, 0, cw, ch, frameRad);
       ctx.fillStyle = options.backgroundColor;
@@ -136,6 +151,9 @@ export function QRPreview({ options, labels, isDark }: Props) {
       const ch = topH  + qrFrameH + botH;
       canvas.width  = cw;
       canvas.height = ch;
+      // Fill outer area so rounded corners are visible on any paste background
+      ctx.fillStyle = outerBg;
+      ctx.fillRect(0, 0, cw, ch);
       ctx.save();
       clip(ctx, leftW, topH, qrFrameW, qrFrameH, frameRad);
       ctx.fillStyle = options.backgroundColor;
