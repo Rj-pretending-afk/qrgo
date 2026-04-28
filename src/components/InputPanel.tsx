@@ -263,11 +263,18 @@ export function InputPanel({ options, onChange, isDark, language, mode }: Props)
           <div className="flex items-center gap-3">
             <img src={options.logoUrl} className={`w-14 h-14 rounded-lg object-contain border ${isDark ? 'border-gray-600 bg-white/10' : 'border-gray-200 bg-gray-50'}`} />
             <div className="flex-1">
-              <input type="range" min="0.2" max="0.4" step="0.05"
+              <input type="range" min="0.1" max="0.6" step="0.05"
                 value={options.logoSize}
                 onChange={(e) => onChange({ logoSize: parseFloat(e.target.value) })}
                 className="w-full" />
-              <p className={`text-xs mt-0.5 ${subLabel}`}>{isEnglish ? 'Size' : '大小'} {Math.round(options.logoSize * 100)}%</p>
+              <p className={`text-xs mt-0.5 ${subLabel}`}>
+                {isEnglish ? 'Size' : '大小'} {Math.round(options.logoSize * 100)}%
+                {options.logoSize > 0.4 && (
+                  <span className={`ml-1 ${isDark ? 'text-yellow-400' : 'text-amber-500'}`}>
+                    {isEnglish ? '· large logo may affect scanning' : '· 过大可能影响识别率'}
+                  </span>
+                )}
+              </p>
             </div>
             <button onClick={handleRemoveLogo}
               className={`text-xs px-2 py-1 rounded border ${isDark ? 'border-gray-600 text-gray-400 hover:text-red-400' : 'border-gray-200 text-gray-400 hover:text-red-500'}`}>
