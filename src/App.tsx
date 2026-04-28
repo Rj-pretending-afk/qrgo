@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { InputPanel } from './components/InputPanel';
 import { QRPreview } from './components/QRPreview';
 import { LabelPanel } from './components/LabelPanel';
-import type { QROptions, QRLabels, LabelPosition, LabelConfig } from './types/qr.types';
+import type { QROptions, QRLabels, LabelPosition, LabelConfig, Language, AppMode } from './types/qr.types';
 import './App.css';
 
 const defaultOptions: QROptions = {
@@ -56,8 +56,22 @@ function App() {
   const [options, setOptions] = useState<QROptions>(defaultOptions);
   const [labels, setLabels] = useState<QRLabels>(defaultLabels);
   const [isDark, setIsDark] = useState(true);
+  const [language, setLanguage] = useState<Language>('zh');
+  const [mode, setMode] = useState<AppMode>('custom');
 
   const theme = isDark ? darkTheme : lightTheme;
+  const isEnglish = language === 'en';
+  const isSimple = mode === 'simple';
+  const displayOptions: QROptions = isSimple
+    ? {
+        ...options,
+        errorCorrectionLevel: 'H',
+        framePadding: 28,
+        frameRadius: 36,
+        labelsInFrame: false,
+      }
+    : options;
+  const displayLabels = isSimple ? defaultLabels : labels;
 
   const handleChange = (updates: Partial<QROptions>) => {
     setOptions((prev) => ({ ...prev, ...updates }));
@@ -69,14 +83,30 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-colors ${theme.page}`}>
-      <header className={`${theme.header} shadow-sm px-6 py-4 flex items-center justify-between`}>
+      <header className={`${theme.header} shadow-sm px-6 py-4 relative flex items-center justify-between`}>
         <h1 className={`text-xl font-bold ${theme.titleText}`}>QRGo - by Rj</h1>
         <button
-          onClick={() => setIsDark(!isDark)}
-          className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${theme.toggleBtn}`}
+          onClick={() => setMode(isSimple ? 'custom' : 'simple')}
+          className={`absolute left-1/2 -translate-x-1/2 text-sm px-3 py-1.5 rounded-lg border transition-colors ${theme.toggleBtn}`}
         >
-          {isDark ? '☀️ 浅色' : '🌙 深色'}
+          {isSimple
+            ? (isEnglish ? 'Custom Mode' : '自定义模式')
+            : (isEnglish ? 'Simple Mode' : '简单模式')}
         </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLanguage(isEnglish ? 'zh' : 'en')}
+            className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${theme.toggleBtn}`}
+          >
+            {isEnglish ? '🇨🇳 中文' : '🇺🇸 English'}
+          </button>
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${theme.toggleBtn}`}
+          >
+            {isDark ? (isEnglish ? '☀️ Light' : '☀️ 浅色') : (isEnglish ? '🌙 Dark' : '🌙 深色')}
+          </button>
+        </div>
       </header>
 
       <main className="flex flex-row gap-6 p-6 max-w-[1080px] mx-auto">
@@ -85,22 +115,26 @@ function App() {
           className={`rounded-xl shadow-sm p-5 ${theme.card}`}
           style={{ width: '380px', flexShrink: 0, overflowY: 'auto', maxHeight: 'calc(100vh - 88px)' }}
         >
-          <InputPanel options={options} onChange={handleChange} isDark={isDark} />
+          <InputPanel options={displayOptions} onChange={handleChange} isDark={isDark} language={language} mode={mode} />
 
-          {/* 分隔线 */}
-          <div className={`my-5 border-t ${theme.sectionTitle}`} />
+          {!isSimple && (
+            <>
+              {/* 分隔线 */}
+              <div className={`my-5 border-t ${theme.sectionTitle}`} />
 
-          {/* 文字标签区 */}
-          <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme.sectionTitle}`}>
-            文字标签
-          </p>
-          <LabelPanel labels={labels} onChange={handleLabelChange} isDark={isDark} />
+              {/* 文字标签区 */}
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme.sectionTitle}`}>
+                {isEnglish ? 'Text Labels' : '文字标签'}
+              </p>
+              <LabelPanel labels={labels} onChange={handleLabelChange} isDark={isDark} language={language} />
+            </>
+          )}
         </div>
 
         {/* 右侧预览区 */}
         <div className={`flex-1 rounded-xl shadow-sm p-5 flex items-center justify-center ${theme.card}`}
           style={{ minHeight: '400px' }}>
-          <QRPreview options={options} labels={labels} isDark={isDark} />
+          <QRPreview options={displayOptions} labels={displayLabels} isDark={isDark} language={language} />
         </div>
       </main>
     </div>
