@@ -25,6 +25,9 @@ export interface LabelConfig {
   fontSize: number;
   fontFamily: string;
   color: string;
+  bold: boolean;
+  italic: boolean;
+  shadow: boolean;
 }
 
 export type QRLabels = Record<LabelPosition, LabelConfig>;

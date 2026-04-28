@@ -7,26 +7,35 @@ interface Props {
   labels: QRLabels;
   isDark: boolean;
   language: Language;
+  qrDisplaySize: number;
+  onQrDisplaySizeChange: (size: number) => void;
 }
 
-const DISPLAY_SIZE = 280;
+const DISPLAY_SIZE = 280; // fixed canvas reference size (matches QR_PIXEL_SIZE / 2)
+const SIZE_STEP    = 40;
+const SIZE_MIN     = 160;
+const SIZE_MAX     = 520;
 
 function LabelEl({
   cfg,
-  vertical = false,
-  isEmpty = false,
-  isDark = false,
+  vertical  = false,
+  isEmpty   = false,
+  isDark    = false,
+  maxWidth  = DISPLAY_SIZE,
 }: {
   cfg: LabelConfig;
   vertical?: boolean;
   isEmpty?: boolean;
   isDark?: boolean;
+  maxWidth?: number;
 }) {
   const style: React.CSSProperties = {
-    fontFamily: cfg.fontFamily,
-    fontSize: cfg.fontSize,
-    color: cfg.color,
-    textShadow: '0 1px 4px rgba(0,0,0,0.28)',
+    fontFamily:  cfg.fontFamily,
+    fontSize:    cfg.fontSize,
+    fontWeight:  cfg.bold   ? 'bold'   : 'normal',
+    fontStyle:   cfg.italic ? 'italic' : 'normal',
+    color:       cfg.color,
+    textShadow:  (cfg.shadow ?? true) ? '0 1px 4px rgba(0,0,0,0.28)' : 'none',
     ...(isEmpty && {
       backgroundColor: isDark ? 'rgba(0,0,0,0.50)' : 'rgba(180,180,180,0.50)',
       padding: '3px 10px',
@@ -34,12 +43,12 @@ function LabelEl({
     }),
     ...(vertical
       ? { writingMode: 'vertical-lr' as const, textOrientation: 'mixed' as const, whiteSpace: 'pre-wrap' as const }
-      : { textAlign: 'center' as const, whiteSpace: 'pre-line' as const, maxWidth: `${DISPLAY_SIZE}px` }),
+      : { textAlign: 'center' as const, whiteSpace: 'pre-line' as const, maxWidth: `${maxWidth}px` }),
   };
   return <div style={style}>{cfg.text}</div>;
 }
 
-export function QRPreview({ options, labels, isDark, language }: Props) {
+export function QRPreview({ options, labels, isDark, language, qrDisplaySize, onQrDisplaySizeChange }: Props) {
   const { containerRef, download, getCanvas, isGenerating, error } = useQRCode(options, language);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const isEnglish = language === 'en';
@@ -48,18 +57,18 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
   const show    = (cfg: LabelConfig) => cfg.enabled && !!cfg.text.trim();
   const inFrame = options.labelsInFrame;
 
+  // ── Canvas composition ────────────────────────────────────────────────────
   const composeCanvas = (): HTMLCanvasElement | null => {
     const qrCanvas = getCanvas();
     if (!qrCanvas) return null;
 
-    const qrSize   = qrCanvas.width;
-    const scale    = qrSize / DISPLAY_SIZE;
+    const qrSize   = qrCanvas.width;            // 560 (2x pixel canvas)
+    const scale    = qrSize / DISPLAY_SIZE;     // 2 — always based on fixed reference
     const gap      = 8 * scale;
     const lineH    = 1.4;
     const framePad = options.framePadding * scale;
     const frameRad = options.frameRadius  * scale;
 
-    // Pre-compute visibility once — avoids redundant show() calls in size/draw helpers
     const topVis   = show(labels.top);
     const botVis   = show(labels.bottom);
     const leftVis  = show(labels.left);
@@ -79,34 +88,38 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
     if (framePad === 0 && frameRad === 0 && !anyLabels) return qrCanvas;
 
     const clip = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
-      const cr = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
-      ctx.roundRect(x, y, w, h, cr);
-      ctx.closePath(); // explicit close for cross-browser clip reliability
+      ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
+      ctx.closePath();
       ctx.clip();
     };
 
-    // Returns an opaque outer background that contrasts with the card color,
-    // so the rounded corners are visible on any paste target (transparent doesn't work on dark bg).
-    const outerBg = (() => {
-      const hex = options.backgroundColor.replace('#', '');
-      const lum = parseInt(hex.slice(0, 2), 16) * 0.299
-                + parseInt(hex.slice(2, 4), 16) * 0.587
-                + parseInt(hex.slice(4, 6), 16) * 0.114;
-      return lum > 128 ? '#d0d0d0' : '#ffffff';
-    })();
+    // Opaque outer background so rounded corners are visible on any paste target
+    const hex = options.backgroundColor.replace('#', '');
+    const lum = parseInt(hex.slice(0, 2), 16) * 0.299
+              + parseInt(hex.slice(2, 4), 16) * 0.587
+              + parseInt(hex.slice(4, 6), 16) * 0.114;
+    const outerBg = lum > 128 ? '#d0d0d0' : '#ffffff';
 
     const applyTextStyle = (ctx: CanvasRenderingContext2D, cfg: LabelConfig) => {
-      ctx.font = `${cfg.fontSize * scale}px ${cfg.fontFamily}`;
+      const bold   = cfg.bold   ? 'bold '   : '';
+      const italic = cfg.italic ? 'italic ' : '';
+      ctx.font      = `${italic}${bold}${cfg.fontSize * scale}px ${cfg.fontFamily}`;
       ctx.fillStyle = cfg.color;
-      ctx.shadowColor = 'rgba(0,0,0,0.28)';
-      ctx.shadowBlur  = 4 * scale;
-      ctx.shadowOffsetY = 1 * scale;
+      if (cfg.shadow ?? true) {
+        ctx.shadowColor   = 'rgba(0,0,0,0.28)';
+        ctx.shadowBlur    = 4 * scale;
+        ctx.shadowOffsetY = 1 * scale;
+      } else {
+        ctx.shadowColor   = 'transparent';
+        ctx.shadowBlur    = 0;
+        ctx.shadowOffsetY = 0;
+      }
     };
 
     const drawH = (ctx: CanvasRenderingContext2D, cfg: LabelConfig, cx: number, cy: number) => {
       ctx.save();
-      ctx.textAlign = 'center';
+      ctx.textAlign    = 'center';
       ctx.textBaseline = 'top';
       applyTextStyle(ctx, cfg);
       cfg.text.split('\n').forEach((line, i) =>
@@ -118,7 +131,7 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(Math.PI / 2);
-      ctx.textAlign = 'center';
+      ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       applyTextStyle(ctx, cfg);
       ctx.fillText(cfg.text.replace(/\n/g, '  '), 0, 0);
@@ -131,19 +144,15 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
     if (inFrame && anyLabels) {
       const cw = framePad + leftW + qrSize + rightW + framePad;
       const ch = framePad + topH  + qrSize + botH  + framePad;
-      canvas.width  = cw;
-      canvas.height = ch;
-      // Fill outer area so rounded corners are visible on any paste background
-      ctx.fillStyle = outerBg;
-      ctx.fillRect(0, 0, cw, ch);
+      canvas.width = cw; canvas.height = ch;
+      ctx.fillStyle = outerBg; ctx.fillRect(0, 0, cw, ch);
       ctx.save();
       clip(ctx, 0, 0, cw, ch, frameRad);
-      ctx.fillStyle = options.backgroundColor;
-      ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = options.backgroundColor; ctx.fillRect(0, 0, cw, ch);
       ctx.drawImage(qrCanvas, framePad + leftW, framePad + topH);
-      if (topVis)   drawH(ctx, labels.top,    cw / 2,                                framePad);
-      if (botVis)   drawH(ctx, labels.bottom, cw / 2,                                framePad + topH + qrSize + gap / 2);
-      if (leftVis)  drawV(ctx, labels.left,   framePad + leftW / 2,                  framePad + topH + qrSize / 2);
+      if (topVis)   drawH(ctx, labels.top,    cw / 2,                                 framePad);
+      if (botVis)   drawH(ctx, labels.bottom, cw / 2,                                 framePad + topH + qrSize + gap / 2);
+      if (leftVis)  drawV(ctx, labels.left,   framePad + leftW / 2,                   framePad + topH + qrSize / 2);
       if (rightVis) drawV(ctx, labels.right,  framePad + leftW + qrSize + rightW / 2, framePad + topH + qrSize / 2);
       ctx.restore();
     } else {
@@ -151,15 +160,11 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
       const qrFrameH = framePad * 2 + qrSize;
       const cw = leftW + qrFrameW + rightW;
       const ch = topH  + qrFrameH + botH;
-      canvas.width  = cw;
-      canvas.height = ch;
-      // Fill outer area so rounded corners are visible on any paste background
-      ctx.fillStyle = outerBg;
-      ctx.fillRect(0, 0, cw, ch);
+      canvas.width = cw; canvas.height = ch;
+      ctx.fillStyle = outerBg; ctx.fillRect(0, 0, cw, ch);
       ctx.save();
       clip(ctx, leftW, topH, qrFrameW, qrFrameH, frameRad);
-      ctx.fillStyle = options.backgroundColor;
-      ctx.fillRect(0, 0, cw, ch);
+      ctx.fillStyle = options.backgroundColor; ctx.fillRect(0, 0, cw, ch);
       ctx.drawImage(qrCanvas, leftW + framePad, topH + framePad);
       ctx.restore();
       if (topVis)   drawH(ctx, labels.top,    cw / 2,                        0);
@@ -167,7 +172,6 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
       if (leftVis)  drawV(ctx, labels.left,   leftW / 2,                     ch / 2);
       if (rightVis) drawV(ctx, labels.right,  leftW + qrFrameW + rightW / 2, ch / 2);
     }
-
     return canvas;
   };
 
@@ -196,6 +200,7 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
     }, 'image/png');
   };
 
+  // ── Styles ────────────────────────────────────────────────────────────────
   const cardStyle: React.CSSProperties = {
     position: 'relative',
     padding: options.framePadding,
@@ -207,7 +212,6 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
     transition: 'padding 0.25s ease, border-radius 0.25s ease',
   };
 
-  // Closes over options so it reacts to frame changes without extra props
   const Overlay = ({ children }: { children: React.ReactNode }) => (
     <div
       className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5"
@@ -217,19 +221,26 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
     </div>
   );
 
-  const labelProps = { isEmpty, isDark };
-  const copyLabel  = copyState === 'copied'
-    ? isEnglish ? 'Copied' : '已复制'
+  const labelProps = { isEmpty, isDark, maxWidth: qrDisplaySize };
+
+  const copyLabel = copyState === 'copied'
+    ? (isEnglish ? 'Copied' : '已复制')
     : copyState === 'failed'
-      ? isEnglish ? 'Copy Failed' : '复制失败'
-      : isEnglish ? 'Copy' : '复制';
+      ? (isEnglish ? 'Copy Failed' : '复制失败')
+      : (isEnglish ? 'Copy' : '复制');
+
   let copyBtnCls: string;
   if (copyState === 'copied')      copyBtnCls = isDark ? 'border-green-500 text-green-400' : 'border-green-500 text-green-600';
   else if (copyState === 'failed') copyBtnCls = isDark ? 'border-red-500 text-red-400'    : 'border-red-400 text-red-500';
   else                             copyBtnCls = isDark ? 'border-gray-500 text-gray-200 hover:bg-white/10' : 'border-gray-400 text-gray-700 hover:bg-gray-100';
 
+  const zoomBtnCls = `w-8 h-8 rounded-lg text-base font-bold border transition-colors disabled:opacity-30 ${
+    isDark ? 'border-gray-600 text-gray-300 hover:bg-white/10' : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+  }`;
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-5">
       <div className="flex flex-col items-center gap-2">
         {!inFrame && show(labels.top) && <LabelEl cfg={labels.top} {...labelProps} />}
 
@@ -262,7 +273,12 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
               {inFrame && show(labels.top) && <LabelEl cfg={labels.top} {...labelProps} />}
               <div className="flex items-center gap-2">
                 {inFrame && show(labels.left) && <LabelEl cfg={labels.left} vertical {...labelProps} />}
-                <div ref={containerRef} className="qr-canvas-wrap" />
+                {/* CSS var controls the canvas display size without breaking internal pixel resolution */}
+                <div
+                  ref={containerRef}
+                  className="qr-canvas-wrap"
+                  style={{ '--qr-display-size': `${qrDisplaySize}px` } as React.CSSProperties}
+                />
                 {inFrame && show(labels.right) && <LabelEl cfg={labels.right} vertical {...labelProps} />}
               </div>
               {inFrame && show(labels.bottom) && <LabelEl cfg={labels.bottom} {...labelProps} />}
@@ -281,6 +297,24 @@ export function QRPreview({ options, labels, isDark, language }: Props) {
         </div>
       )}
 
+      {/* Zoom controls */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onQrDisplaySizeChange(Math.max(SIZE_MIN, qrDisplaySize - SIZE_STEP))}
+          disabled={qrDisplaySize <= SIZE_MIN}
+          className={zoomBtnCls}
+        >−</button>
+        <span className={`text-xs font-mono w-16 text-center select-none ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          {qrDisplaySize}px
+        </span>
+        <button
+          onClick={() => onQrDisplaySizeChange(Math.min(SIZE_MAX, qrDisplaySize + SIZE_STEP))}
+          disabled={qrDisplaySize >= SIZE_MAX}
+          className={zoomBtnCls}
+        >+</button>
+      </div>
+
+      {/* Action buttons */}
       <div className="flex gap-3 flex-wrap justify-center">
         <button
           onClick={handleDownload}

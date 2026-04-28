@@ -113,8 +113,8 @@ export function LabelPanel({ labels, onChange, isDark, language }: Props) {
             </div>
           </div>
 
-          {/* 文字颜色 */}
-          <div className="flex items-center gap-2">
+          {/* 文字颜色 + 格式 */}
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{isEnglish ? 'Color' : '颜色'}</span>
             <input
               type="color"
@@ -123,16 +123,38 @@ export function LabelPanel({ labels, onChange, isDark, language }: Props) {
               className={`w-9 h-9 rounded-md cursor-pointer border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
             />
             <span className={`text-xs font-mono ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{cfg.color}</span>
+
+            {/* Format toggles */}
+            {(['bold', 'italic', 'shadow'] as const).map((key) => {
+              const active = !!(cfg as unknown as Record<string, unknown>)[key];
+              const activeCls = isDark ? 'bg-white text-[#1A1A2E] border-white' : 'bg-[#1A1A2E] text-white border-[#1A1A2E]';
+              const inactiveCls = isDark ? 'text-gray-400 border-gray-600 hover:border-gray-400' : 'text-gray-500 border-gray-300 hover:border-gray-400';
+              const displayLabel = key === 'bold' ? 'B' : key === 'italic' ? 'I' : (isEnglish ? 'Shd' : '影');
+              return (
+                <button
+                  key={key}
+                  onClick={() => onChange(activePos, { [key]: !active } as Partial<typeof cfg>)}
+                  className={`px-2.5 py-1 rounded-lg text-xs border transition-all font-semibold ${active ? activeCls : inactiveCls}`}
+                  style={key === 'bold' ? { fontWeight: 'bold' } : key === 'italic' ? { fontStyle: 'italic' } : {}}
+                  title={key}
+                >
+                  {displayLabel}
+                </button>
+              );
+            })}
           </div>
 
           {/* 预览提示 */}
           {cfg.text.trim() && (
             <div
-              className={`text-xs px-2 py-1.5 rounded border ${isDark ? 'border-gray-600 text-gray-400' : 'border-gray-200 text-gray-500'}`}
+              className={`px-2 py-1.5 rounded border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
               style={{
                 fontFamily: cfg.fontFamily,
-                fontSize: Math.min(cfg.fontSize, 13),
+                fontSize: Math.min(cfg.fontSize, 14),
+                fontWeight: cfg.bold ? 'bold' : 'normal',
+                fontStyle: cfg.italic ? 'italic' : 'normal',
                 color: cfg.color,
+                textShadow: cfg.shadow ? '0 1px 3px rgba(0,0,0,0.25)' : 'none',
                 writingMode: (activePos === 'left' || activePos === 'right') ? 'vertical-lr' : undefined,
                 maxHeight: '60px',
                 overflow: 'hidden',
